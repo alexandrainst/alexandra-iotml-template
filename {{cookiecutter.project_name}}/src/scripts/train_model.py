@@ -17,52 +17,79 @@ from {{cookiecutter.library_name}}.ml_tools.datasets import (
     produce_snippets,
     retrieve_data_from_sql,
 )
-from {{cookiecutter.library_name}}.ml_tools.models import SquareLoss, {{cookiecutter.class_prefix}}AE, {{cookiecutter.class_prefix}}LSTM
-from {{cookiecutter.library_name}}.ml_tools.traintest import {{cookiecutter.class_prefix}}TrainTest
-
+from {{cookiecutter.library_name}}.ml_tools.models import {{cookiecutter.class_prefix}}AE, {{cookiecutter.class_prefix}}LSTM
+from {{cookiecutter.library_name}}.ml_tools.losses import {{cookiecutter.class_prefix}}Loss, RecoLoss
+from {{cookiecutter.library_name}}.ml_tools.traintest import {{cookiecutter.class_prefix}}TrainAlgo
+from {{cookiecutter.library_name}}.utils.training_tools import generate_dataset
+from {{cookiecutter.library_name}}.utils.config import IoTMLConfig, MLTrainingConfig, DatasetConfig
+from omegaconf import DictConfig
 logger = logging.getLogger("train_model")
 logger.level = logging.INFO
 
+TRAINING_VERSION = "v2"
 
 def train_model(
-    model_type: str,
-    output_name: str,
-    dataset_path: str,
-    model_params: dict[Any, Any] = {},
-    training_params: dict[Any, Any] = {},
-) -> Any:
+    training_config: MLTrainingConfig,
+    dataset_config: DatasetConfig,
+    ) -> Any:
     """Training script for a single model."""
-    logger.info("training model...")
+    dataset_name = dataset_config.name
+    training_params = training_config.training_params
+    training_name = training_params.name
 
-    if model_type == "anomaly_encoder":
-        model_instance = {{cookiecutter.class_prefix}}AE(**model_params)
-    elif model_type == "output_predictor":
-        model_instance = {{cookiecutter.class_prefix}}LSTM(**model_params)
+
+    logger.info(
+        f"\n\n---- Training {training_name} on dataset {dataset_name} ---\n\n"
+    )
+
+    if training_params.training_type == "anomaly_encoder":
+        model_instance = DynflexAE(**training_config.aimodel.aimodel_params)
+    elif training_params.training_type == "output_predictor":
+        model_instance = DynflexLSTM(
+            time_window_past=dataset_config.time_window_past,
+            time_window_future=dataset_config.time_window_future,
+            input_features=training_params.input_features,
+            output_features=training_params.output_features,
+            **training_config.aimodel.aimodel_params)
     else:
         raise Exception("Unrecognized model type.")
 
-    traintest = {{cookiecutter.class_prefix}}TrainTest(
+    if training_params.loss.lower()=="dynflexloss":
+        loss_instance = DynflexLoss()
+    else:
+        loss_instance = RecoLoss()
+
+    traintest = DynflexTrainAlgo(
         model=model_instance,
-        model_type=model_type,
+        training_config = training_config,
         optimizer=torch.optim.Adam(
-            model_instance.parameters(), lr=training_params["learning_rate"]
+            model_instance.parameters(), lr=training_params.learning_rate
         ),
-        loss_fn=SquareLoss(),
+        loss_fn=loss_instance,
         device="cuda",
     )
 
     # add the train and valid dataset to the algo
-    train_data = {{cookiecutter.class_prefix}}Dataset(
-        model_params=model_params,
+    dataset_path = os.path.join(
+        f"./training_results/{TRAINING_VERSION}/datasets/",
+        f"{dataset_name}_dataset/train/",
+    )
+
+    train_data = DynflexDataset(
+        training_params=training_params,
         dataset_path=dataset_path,
     )
-    traintest.add_dataset("train", train_data, batch_size=training_params["batch_size"])
-    traintest.current_dataset = "train"
+    traintest.add_dataset("train", train_data, batch_size=training_params.batch_size)
     traintest.train(
-        dataset_label="train", n_epochs=training_params["n_epochs"], autosave=False
+        dataset_label="train", n_epochs=training_params.n_epochs, autosave=False
     )
-    traintest.save_trained_model(output_name=output_name)
-
+    
+    traintest.record_session(
+        output_prefix=os.path.join(
+            f"./training_results/{TRAINING_VERSION}/trainings/",
+            f"{training_name}_{dataset_name}_dataset",
+        )
+    )
     return traintest.loss_history
 
 
@@ -112,108 +139,30 @@ def plot_latent_space_pca(ds_name: str, reduced_values: np.ndarray):
 ######################################################################
 @hydra.main(version_base=None, config_path="../../config", config_name="config")
 def main(config: DictConfig) -> None:
-    """Main orchestrating function.
+    """main orchestrating function
 
-    given some datasets, run the training and
-    evaluations that are appropriate to run
+    The script will generate 1 or several train+test datasetsset,
+    based on the list of defined datasets in the config
+    file. It will then train a list of model trainings
+    as they are defined in the same config.
     """
-    # parse config file for the datasets we need
-    dataset = config["datasets"][0].dataset
-    dataset_name = dataset["name"]
-    time_periods = dataset["time_periods"]
-    logger.info("step 1 - Creating a training dataset...")
-    logger.info("Load data from postgres..")
-    df = retrieve_data_from_sql(
-        start_date=time_periods["start"],
-        end_date=time_periods["end"],
-    )
-    logger.info("normalizing / handling NaN values")
-    df_norm = normalize_data(df.copy())
 
-    if logger.level == logging.DEBUG:
-        logger.debug("Plotting variables before / after normalization...")
+    config = IoTMLConfig(config)
 
-        for k, v in df.items():
-            v = [e if e is not None else 0.0 for e in v]
-            v = np.array(v)
-            fig, axes = plt.subplots(2, 2, figsize=(14, 7))
-            axes[0, 0].plot(v, label="variable")
-            axes[0, 0].set_title(f"variable: {k}")
-            axes[1, 0].hist(v[v != 0], bins=35)
-            axes[1, 0].set_title("variable distribution")
-            axes[0, 0].legend()
+    for ds_conf in config.ds:
+        # Generate the datasets we need for the ml trainings
+        generate_dataset(dataset_config=ds_conf)
 
-            v_normed = df_norm[k]
-            axes[0, 1].plot(v_normed, label="variable", color="g")
-            axes[0, 1].set_title(f"variable: {k}- NORMALIZED")
-            axes[1, 1].hist(v_normed[v_normed != 0.0], bins=35, color="g")
-            axes[1, 1].set_title("normalized distribution")
-            axes[0, 1].legend()
-            plt.show()
+        for train_conf in config.ml_trainings:
 
-    for train_conf in config["ml_trainings"]:
-        # shortcut for the training dict hierarchy
-        model_type = dir(train_conf)[0]
-        train_conf = train_conf.get(model_type)
-
-        # information about the model
-        model_params = train_conf["model"]["model_params"]
-        if train_conf["model"]["name"] == "{{cookiecutter.class_prefix}}ARIMA":
-            logger.info("Detected an ARIMA model. These do not need to be trained")
-            continue
-
-        # information about the training
-        training_name = train_conf["name"]
-        training_params = train_conf["training_params"]
-        dataset_path = f"./{training_name}_{dataset_name}_dataset/"
-        logger.info(f"\n\n---- training model: {training_name} ---\n\n")
-
-        if not os.path.isdir(dataset_path):
-            logger.info(f"no dataset path, creating it ({dataset_path})")
-            os.makedirs(dataset_path)
-
-        if len(glob.glob(dataset_path + "/*.pt")) == 0:
-            logger.info(
-                f"Path {dataset_path} is empty. generating time series snippets..."
-            )
-            _, past = produce_snippets(
-                df=df,
-                time_window=model_params["input_window"],
-                include_keys=model_params["input_variables"].values(),
-            )
-            current, _ = produce_snippets(
-                df=df,
-                time_window=model_params["input_window"],
-                include_keys=model_params["predict_variables"].values(),
-            )
-
-            for n, (c, p) in enumerate(zip(current, past)):
-                torch.save(
-                    (c, p),
-                    dataset_path
-                    + f"/{training_name}_{dataset_name}_sample_{n:0>6d}.pt",
-                )
-                n_dims = len(list(p.keys()))
-                n_time = len(p[list(p.keys())[0]])
-            logger.info(
-                f"Done. generated {n} snippets of {n_dims} dims x {n_time} time windows"
-            )
-        else:
-            logger.info("Dataset already created.")
-
-        logger.info('Step 2: Train a model on the "train" dataset...')
-        if not os.path.isfile(training_name + ".pt"):
             # Run the training
-            output = train_model(
-                model_type=model_type,
-                dataset_path=dataset_path,
-                output_name=training_name + ".pt",
-                model_params=model_params,
-                training_params=training_params,
+            loss_history = train_model(
+                training_config=train_conf, 
+                dataset_config=ds_conf,
             )
 
-            plt.plot(output, "k")
-            plt.title(f"Loss over iterations - {model_type}")
+            plt.plot(loss_history, "k")
+            plt.title(f"Loss over iterations - {train_conf.training_params.training_type}")
             plt.show()
 
 

@@ -11,18 +11,87 @@ import numpy as np
 import torch
 from omegaconf import DictConfig
 from sklearn.decomposition import PCA
-from {{cookiecutter.library_name}}.ml_tools.datasets import (
-    {{cookiecutter.class_prefix}}Dataset,
-    produce_snippets,
-    retrieve_data_from_sql,
-)
+from torch.utils.data import DataLoader
+from {{cookiecutter.library_name}}.ml_tools.datasets import {{cookiecutter.class_prefix}}Dataset
 from {{cookiecutter.library_name}}.ml_tools.models import {{cookiecutter.class_prefix}}AE, {{cookiecutter.class_prefix}}ARIMA, {{cookiecutter.class_prefix}}LSTM
+from {{cookiecutter.library_name}}.utils.evaluation_tools import prediction_accuracy, summarize_training_accuracy
+from {{cookiecutter.library_name}}.utils.plotting_tools import plot_prediction_accuracy, plot_summaries
+from {{cookiecutter.library_name}}.utils.config import MLTrainingConfig, DatasetConfig, IoTMLConfig
+
 
 project_path = Path(__file__).parents[2]
 
 logger = logging.getLogger("train_model")
 logger.level = logging.INFO
 
+
+TRAINING_VERSION = "v2"
+
+def evaluate_model(
+    training_config: MLTrainingConfig,
+    dataset_config: DatasetConfig,
+    ) -> None:
+    """Evaluate the performances of a trained ML model.
+
+    Parameters:
+    ---
+
+    training_config : MLTrainingConfig
+        information about the training performed
+
+    dataset_config: DatasetConfig
+        INformation about the dataset used in training
+
+    """
+    dataset_name = dataset_config.name
+    training_params = training_config.training_params
+    training_name = training_params.name
+    training_type = training_params.training_type
+
+
+    logger.info(
+        f"\n\n---- Evaluating {training_name} on dataset {dataset_name} ---\n\n"
+    )
+
+    if training_params.training_type == "anomaly_encoder":
+        model_instance = {{cookiecutter.class_prefix}}AE(**training_config.aimodel.aimodel_params)
+    elif training_params.training_type == "output_predictor":
+        model_instance = {{cookiecutter.class_prefix}}LSTM(
+            time_window_past=dataset_config.time_window_past,
+            time_window_future=dataset_config.time_window_future,
+            input_features=training_params.input_features,
+            output_features=training_params.output_features,
+            **training_config.aimodel.aimodel_params)
+    else:
+        raise Exception("Unrecognized model type.")
+
+
+    training_prefix = os.path.join(
+            f"./training_results/{TRAINING_VERSION}/trainings/",
+            f"{training_name}_{dataset_name}_dataset",
+        )
+    dataset_path = os.path.join(
+            f"./training_results/{TRAINING_VERSION}/datasets/",
+            f"{dataset_name}_dataset/test/",
+        )
+
+    state_dict = torch.load(training_prefix+".pt")
+    model_instance.load_state_dict(state_dict)
+    model_instance.eval()
+
+    if training_type == "output_predictor":
+        dataset= {{cookiecutter.class_prefix}}Dataset(
+            training_params=training_params,
+            dataset_path=dataset_path,
+        )
+        accuracy_results = prediction_accuracy(model=model_instance, dataset=dataset)
+        fig = plot_prediction_accuracy(accuracy_results=accuracy_results)
+        accuracy_summary = summarize_training_accuracy(accuracy_results=accuracy_results)
+
+        return fig, accuracy_summary
+
+    else:
+        print("NOTHING PLANNED FOR ANOMALY ENCODER")
 
 class ModelEvaluator:
     """Evaluation class for a model."""
@@ -195,87 +264,31 @@ class ModelEvaluator:
 
 @hydra.main(version_base=None, config_path="../../config", config_name="config")
 def main(config: DictConfig) -> None:
-    """Run evalutation code for several trained models."""
-    for training_conf in config["ml_trainings"]:
-        model_type = list(training_conf.keys())[0]
-        training_conf = training_conf[model_type]
-        training_name = training_conf["name"]
-        model_params = training_conf["model"]["model_params"]
 
-        # Get training data
-        train_data = {{cookiecutter.class_prefix}}Dataset(
-            model_params=model_params,
-            dataset_path=f"./{training_name}_train_dataset/",
-        )
+    config = IoTMLConfig(config)
 
-        if (
-            model_type == "output_predictor"
-            and training_conf["model"]["name"] == "{{cookiecutter.class_prefix}}LSTM"
-        ):
-            logger.info("Evaluating an LSTM model...")
-            evaluator = ModelEvaluator(
-                model={{cookiecutter.class_prefix}}LSTM(**model_params),
-                model_type=model_type,
-                state_dict_path=f"./{training_name}.pt",
-            )
+    with PdfPages('multipage_pdf.pdf') as pdf:
 
-            # Plot the accuracy of the prediction
-            data = evaluator.evaluate(dataset=train_data)
+        summaries = {}
+        for ds_conf in config.ds:
+            for train_conf in config.ml_trainings:
 
-            param_labels = model_params["predict_variables"]
-            evaluator.plot_prediction_accuracy(data=data, labels=param_labels)
-
-        elif (
-            model_type == "output_predictor"
-            and training_conf["model"]["name"] == "DynflexARIMA"
-        ):
-            logger.info("Evaluating an ARIMA model...")
-            evaluator = ModelEvaluator(
-                model={{cookiecutter.class_prefix}}ARIMA(**model_params),
-                model_type=model_type,
-            )
-
-            # Plot the accuracy of the prediction
-            data = evaluator.evaluate(dataset=train_data)
-
-            param_labels = model_params["predict_variables"]
-            evaluator.plot_prediction_accuracy(data=data, labels=param_labels)
-
-        elif model_type == "anomaly_encoder":
-            evaluator = ModelEvaluator(
-                model={{cookiecutter.class_prefix}}AE(**model_params),
-                model_type=model_type,
-                state_dict_path=f"./{training_name}.pt",
-            )
-
-            # create a test dataset
-            dataset_path = f"./{training_name}_test_dataset/"
-            if not os.path.isdir(dataset_path):
-                os.makedirs(dataset_path)
-
-            if len(glob.glob(dataset_path + "/*.pt")) == 0:
-                dataset_info = config["datasets"][1].dataset
-                time_periods = dataset_info["time_periods"]
-                df = retrieve_data_from_sql(
-                    start_date=time_periods["start"],
-                    end_date=time_periods["end"],
-                )
-
-                current, past = produce_snippets(
-                    df=df, time_window=model_params["input_window"]
-                )
-                for n, (c, p) in enumerate(zip(current, past)):
-                    torch.save(
-                        (c, p), dataset_path + f"/{model_type}_test_sample_{n:0>6d}.pt"
+                training_name = train_conf.training_params.name
+                keyword = f"{training_name}_{ds_conf.name}"
+                fig, summary = evaluate_model(
+                    training_config = train_conf,
+                    dataset_config=ds_conf
                     )
 
-            test_dataset = {{cookiecutter.class_prefix}}Dataset(
-                model_params=model_params,
-                dataset_path=dataset_path,
-            )
-            evaluator.plot_anomaly_latent_space(
-                training_set=train_data, test_set=test_dataset
-            )
+                pdf.savefig(fig)
+                plt.close()
+                summaries[keyword] = summary
+
+        feature_wise_summaries = plot_summaries(summaries)
+
+        for f in feature_wise_summaries:
+            pdf.savefig(f)
+        plt.close()
 
 
 if __name__ == "__main__":

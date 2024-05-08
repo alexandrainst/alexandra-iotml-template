@@ -5,20 +5,16 @@ File defining the pytorch datasets used for training in this case.
 import logging
 import os
 from collections import OrderedDict
-from typing import Any, List
-
+from typing import Any, Dict, List
 import numpy as np
 import torch
-from sqlalchemy.sql import text
-from {{cookiecutter.library_name}}.utils.sql import load_session
 from torch.utils.data import Dataset
+from sqlalchemy.sql import text
+
+from {{cookiecutter.library_name}}.utils.sql import load_session
+from {{cookiecutter.library_name}}.utils.config import TrainingParams
 
 logger = logging.getLogger("ml_tools.datasets")
-
-
-# We iterate through this list of keys to ensure the ordering stays consistent.
-# This might be superfluous
-ORDERED_VARIABLES = ["y", "state"]
 
 
 class {{ cookiecutter.class_prefix }}Dataset(Dataset):
@@ -27,22 +23,29 @@ class {{ cookiecutter.class_prefix }}Dataset(Dataset):
     def __init__(
         self,
         static_values: dict[str, Any],
+        training_params: TrainingParams,
         dataset_path: str,
     ) -> None:
         """Initialize the dataset class.
 
         Parameter
         -------
+
         static_values: dict
             Statistical properties related to an entire dataset.
             These are passed into the normalize_data function
 
+        training_params : TrainingParams
+            A dict containing training-specific information
+            like the model type and features to be used.
+
         dataset_path : str
-            path to a directory containing .pt files
+            Path to a directory containing .pt files
 
         """
         self.dataset_path = dataset_path
         self.static_values = static_values
+        self.training_params = training_params
 
         all_files = []
         for element in os.listdir(dataset_path):
@@ -64,20 +67,49 @@ class {{ cookiecutter.class_prefix }}Dataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        # The snippet tensor dimension should have size
-        data = torch.load(os.path.join(self.dataset_path, self.snippets[idx]))
+        filename = os.path.join(self.dataset_path, self.snippets[idx])
 
-        # Normalize data
-        normalized_data = normalize_data(data, static_values=self.static_values)
-        normalized_data = torch.Tensor(np.array(list(normalized_data.values())))
-        out = normalized_data.flatten()
+        data = torch.load(filename)
+
+        if self.training_params.training_type == "output_predictor":
+
+            current_pt = data["current_pt"]
+            input_data = data["input_data"]
+            truth_data = data["truth_data"]
+
+            current_pt = de_nonify(current_pt)
+            normalized_input = normalize_data(input_data)
+            normalized_truth = normalize_data(truth_data)
+
+            past = {}
+            for k in self.training_params.input_features.values():
+                v = torch.Tensor(normalized_input[k])
+                past[k] = v
+
+            future = {}
+            for k in self.training_params.output_features.values():
+                v = torch.Tensor(normalized_truth[k])
+                future[k] = v
+
+            out = {
+                "current_pt": current_pt,
+                "input": past,
+                "truth": future,
+            }
+
+        elif self.training_params.training_type == "anomaly_encoder":
+            # Normalize data
+            normalized_data = normalize_data(data, static_values=self.static_values)
+            normalized_data = torch.Tensor(np.array(list(normalized_data.values())))
+            out = normalized_data.flatten()
+        else:
+            raise Exception("Training type unknown.")
+        
         return out
 
 
 ###############################################################
 # Data extraction and preprocessing
-
-
 def retrieve_data_from_sql(sql_table: str, start_date: str, end_date: str) -> Any:
     """Function that extracts raw data from postgres.
 
@@ -151,74 +183,109 @@ def gather_dataset_statistics(df: dict[Any, Any]) -> dict[Any, Any]:
     return static_values
 
 
+def merge_datasets(df_list: List) -> dict[Any, Any]:
+    """Merge several datasets into one big one."""
+    keys = df_list[0].keys()
+    all_data: dict[Any, Any] = {}
+    for k in keys:
+        all_data[k] = []
+
+    for df in df_list:
+        for k in keys:
+            all_data[k] += df[k]
+
+    return all_data
+
+
+def de_nonify(pydict: Dict[Any, Any]) -> Dict[Any, Any]:
+    """Remove Nones from python dictionary."""
+    newdict: Dict[Any, Any] = {}
+
+    for k, v in pydict.items():
+        newdict[k] = [x if x is not None else -1.0 for x in v]
+
+    return newdict
+
+
 def produce_snippets(
-    df: dict, time_window: int, include_keys: list = ORDERED_VARIABLES
-) -> Any:
+    df: dict,
+    time_window_past: int,
+    time_window_future: int,
+    include_keys: list|None=None) -> Any:
     """Take a historical dataset and cut it into snippets of specified dimensions.
 
-    The snippets can be taken defined as past or future observation,
-    depending on the sign of the time_window variable. In both cases,
-    the "current" time point is included in the array
+    A snippet consists of three elements:
+
+    - the current data point for which the snippet is made
+    - a list of the time_window_past previous data points
+    - a list of the time_window_future next data points
+
+    The snippet is returned as a Python dict
 
     Parameters
     ----
     df : dict
-        dictionary of time series data
+        dictionary of the full time series data
 
-    time_window: int
-        number of time steps to keep. negative means past values
+    time_window_past: int
+        Number of time steps to keep prior to current point
+
+    time_window_future: int
+        Number of time steps to keep after to current point
 
     include_keys: list
-                    a list of keys we want to include in the
-                    snippet
+        A list of keys from "df" we want to include in the snippet. If
+        set to None default to all keys present in "df".
 
     Returns:
     ---
     snippets : list
-        a list of produced snippets of data
-
-    current_pt : list
-        a list of the values defined as the "current" value
-        associated with the snippet
+        A list of produced snippets of data
     """
     n_data_points = len(df[list(df.keys())[0]])
+
+    if include_keys is None:
+        include_keys = df.keys()
 
     i = 0
     current_pts: List[Any] = []
     snippets: List[Any] = []
     while i < n_data_points:
-        if time_window < 0 and i < (-time_window):
-            logger.debug(f"{i}: lower than time window {time_window}")
+        if i < time_window_past:
+            logger.debug(f"{i}: lower than time window {time_window_past}")
             i += 1
             continue
 
-        if time_window >= 0 and i > (n_data_points - time_window):
+        if i > (n_data_points - time_window_future):
             logger.debug(
                 f"{i}: higher than n_datapoints - time window \
-                {n_data_points-time_window}"
+                {n_data_points-time_window_future}"
             )
             break
 
         current_pt: dict[Any, Any] = {}
-        snippet: dict[Any, Any] = {}
+        input_data: dict[Any, Any] = {}
+        truth_data: dict[Any, Any] = {}
 
         for k in include_keys:
             v = df[k]
-            if time_window < 0:
-                subv = v[(i + time_window) : i]
-            else:
-                subv = v[i + 1 : (i + 1 + time_window)]
-
             current_pt[k] = [v[i]]
-            snippet[k] = subv
-
-        if len(snippet[list(snippet.keys())[0]]) == 0:
+            input_data[k] = v[(i - time_window_past) : i]
+            truth_data[k] = v[(i +1) : (i+1+time_window_future)]
+            
+        # Stop when the last snippet is empty
+        if len(input_data[list(input_data.keys())[0]]) == 0:
             break
+
+        snippet: dict[Any, Any] = {
+        "input_data": input_data,
+        "truth_data": truth_data,
+        "current_pt": current_pt
+        }
         snippets.append(snippet)
-        current_pts.append(current_pt)
         i += 1
 
-    return current_pts, snippets
+    return snippets
 
 
 def normalize_data(df: dict[Any, Any], static_values: dict[Any, Any]) -> dict[Any, Any]:

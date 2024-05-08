@@ -1,19 +1,21 @@
-"""File containing the training and testing classes.
+"""File containing the training algorithm.
 
-They classes are used to schedule and coordinate an ML training phase.
+These classes are used to schedule and coordinate
+an ML training phase.
 """
-
 import logging
-
 import numpy as np
 import torch
+from torch.utils.data import DataLoader
 from sklearn.decomposition import PCA
 from torch.utils.data import DataLoader
 
-logger = logging.getLogger("ml_tools.traintest")
+from {{cookiecutter.class_prefix}}.utils.config import MLTrainingConfig
 
 
-# Generic Train Test class. avoid changing this as much as possible
+logger = logging.getLogger("ml_tools.trainalgo")
+
+
 class AlgoTraining:
     """Wrapper class around training steps of a pytorch model."""
 
@@ -32,9 +34,7 @@ class AlgoTraining:
                 "Running in debug mode. Avoiding randomness as much as possible..."
             )
             torch.manual_seed(0)
-
-            # Also avoid using non-deterministic algorithms when running, e.g.,
-            # convolutions:
+            # Avoid using non-deterministic algorithms as much as possible:
             torch.use_deterministic_algorithms(True)
 
         # Record historic evolution of the training
@@ -44,9 +44,13 @@ class AlgoTraining:
         """Setup structure of training results and specific variables to track."""
         self.loss_history = []
 
-    def add_dataset(self, label, dataset, batch_size=10):
+    def add_dataset(self, label, dataset, batch_size):
         """Import new pytorch datasets and load them as DataLoders."""
-        self.datasets[label] = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+        self.datasets[label] = DataLoader(
+            dataset, 
+            batch_size=batch_size,
+            shuffle=True,
+            drop_last=True)
         self.current_dataset = label
 
     def _train_one_epoch(self):
@@ -124,12 +128,19 @@ class {{cookiecutter.class_prefix}}Training(AlgoTraining):
     train_one_epoch in this case.
     """
 
-    def __init__(self, model, model_type, optimizer, loss_fn, device="cuda"):
+    def __init__(
+        self,
+        model,
+        training_config: MLTrainingConfig,
+        optimizer,
+        loss_fn,
+        device="cuda",
+    ):
         """Initialize inherited class + extra parameters."""
         AlgoTraining.__init__(
             self, model=model, optimizer=optimizer, loss_fn=loss_fn, device=device
         )
-        self.model_type = model_type
+        self.train_config = training_config
 
         # Example where we want to record PCA fits of an encoder model
         self.pca_fit = None
@@ -147,12 +158,19 @@ class {{cookiecutter.class_prefix}}Training(AlgoTraining):
             self.optim.zero_grad()
 
             # This is where the change happens
-            if self.model_type == "output_predictor":
+            if self.train_config.training_params.training_type == "output_predictor":
                 # get data onto computing device
-                inputs, outputs = databatch
-                inputs = inputs.to(self.device)
-                target = outputs.to(self.device)
-                predictions = self.model(inputs)
+
+                input_data = {k: v.to(self.device) for k, v in databatch["input"].items()}
+                truth_data = {k: v.to(self.device) for k, v in databatch["truth"].items()}
+
+                #forward pass on model
+                output_data = self.model(input_data)
+
+                # Compare the predicted and target values
+                loss = self.loss(output_ts=output_data, truth_ts=truth_data)
+                self.loss_history.append(loss.item())
+                loss.backward()
 
             else:
                 inputs = databatch.to(self.device)

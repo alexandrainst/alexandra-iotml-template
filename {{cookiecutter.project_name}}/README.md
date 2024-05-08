@@ -21,6 +21,41 @@ Developer(s):
 3. (Optional) Run `make add-rag` to add RAG functionality from [ragger](https://github.com/alexandrainst/ragger).
 4. Initialize a new instance of the toolbox by calling `docker-compose up -d --build`.
 
+### Dump data on postgres + Visualize with grafana
+
+## About the ML framework
+
+The ML framework used in this project has been developped to handle generic ML tasks related to multidimensional time series data stored in a postgres/timescale database. The framework uses pytorch as a backend, and defines the problem as illustrated in the figure below:
+
+TODO: image of the framework
+
+### A bit of nomenclature
+
+In the figure above, we define a few variables that will have a specific meaning throughout the code:
+
+* `twindow_past`: The number of past data samples we want to consider in the problem
+* `twindow_future`: The number of future data samples we want to consider in the problem
+* `input_data`: refers to the tensor/dict/objects that are passed into our model (basically the "x" tensor in any ML diagram)
+* `output_data`: refers to what comes out of an ML model
+* `truth_data`: a tensor/dict/object we already know in advance, which we might want to compare against the `output_data`
+* `current_pt`: a set of values associated with a single timestamp
+* `dataset`: groups of data coming out of a common SQL query
+
+### The Training pipeline
+
+TODO: figure
+
+The steps for training a model is as follow:
+
+1. Create a dataset of time series snippets
+2. Train a model
+3. Evaluate it
+
+### The config file
+### The `dataset` config
+### The `training` config
+### The `model` config
+
 
 ### Adding and Removing Packages
 
