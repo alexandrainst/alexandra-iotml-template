@@ -18,7 +18,8 @@ Developer(s):
 
 1. Run `make install`, which sets up a virtual environment and all Python dependencies therein.
 2. Run `source .venv/bin/activate` to activate the virtual environment.
-3. Initialize a new instance of the toolbox by calling `docker-compose up -d --build`.
+3. (Optional) Run `make add-rag` to add RAG functionality from [ragger](https://github.com/alexandrainst/ragger).
+4. Initialize a new instance of the toolbox by calling `docker-compose up -d --build`.
 
 
 ### Adding and Removing Packages
@@ -106,52 +107,3 @@ included with a configuration file for running code spaces on Github. When hoste
 `alexandrainst/{{ cookiecutter.project_name }}` then simply press the `<> Code` button
 and add a code space to get started, which will open a VSCode window directly in your
 browser.
-
-
-## Project structure
-```
-.
-├── .devcontainer
-│   └── devcontainer.json
-├── .github
-│   └── workflows{{'\n│       ├── ci.yaml' if cookiecutter.open_source == 'y'}}
-│       └── docs.yaml
-├── .gitignore
-├── .pre-commit-config.yaml{{'\n├── CODE_OF_CONDUCT.md\n├── CONTRIBUTING.md' if cookiecutter.open_source == 'y'}}
-├── Dockerfile{{'\n├── LICENSE' if cookiecutter.open_source == 'y'}}
-├── README.md
-├── config
-│   ├── __init__.py
-│   ├── config.yaml
-│   └── hydra
-│       └── job_logging
-│           └── custom.yaml
-├── data
-│   ├── final
-│   │   └── .gitkeep
-│   ├── processed
-│   │   └── .gitkeep
-│   └── raw
-│       └── .gitkeep
-├── docs
-│   └── .gitkeep
-├── gfx
-│   ├── .gitkeep
-│   └── alexandra_logo.png
-├── makefile
-├── models
-│   └── .gitkeep
-├── notebooks
-│   └── .gitkeep{{'\n├── poetry.toml' if cookiecutter.dependency_manager != 'pip'}}
-├── pyproject.toml
-├── src
-│   ├── scripts
-│   │   ├── fix_dot_env_file.py
-│   │   └── your_script.py
-│   └── {{cookiecutter.project_name}}
-│       ├── __init__.py
-│       └── your_module.py
-└── tests
-    ├── __init__.py
-    └── test_dummy.py
-```

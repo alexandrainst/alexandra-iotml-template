@@ -4,11 +4,10 @@
     "class_prefix": "Prefix used to name pytorch classes related to this project",
     "project_description": "Short description of the project",
     "author_name": "Your full name",
-    "email": "<name>@alexandra.dk",
-    "open_source": "Is this a public open source project? [y/N]",
-    "python_version": "Your Python version, written as 3.xx",
-    "dependency_manager": "Which dependency manager do you use? [pip/POETRY]",
-    "license_checker": "Do you want to check that your dependencies are only using open source licenses? [Y/n]",
+    "email": "name@alexandra.dk",
+    "open_source": "Is this a public open source project? (y/n, default: n)",
+    "python_version": "3.11",
+    "dependency_manager": "Which dependency manager do you use? (pip/poetry, default: poetry)",
     "_copy_without_render": [
         "src/nodered/example_ml_inference.json"
     ]
