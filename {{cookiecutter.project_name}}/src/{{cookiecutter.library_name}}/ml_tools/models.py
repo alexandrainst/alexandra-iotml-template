@@ -31,7 +31,7 @@ class {{ cookiecutter.class_prefix }}LSTM(nn.Module):
         output_features: Dict[int, Any],
         n_hidden: int | None = None,
     ) -> None:
-        """Multivariate LSTM prediction model
+        """Multivariate LSTM prediction model.
 
         Parameters:
         ---

@@ -246,7 +246,7 @@ def produce_snippets(
     n_data_points = len(df[list(df.keys())[0]])
 
     if include_keys is None:
-        keys_included = df.keys()
+        keys_included = list(df.keys())
     else:
         keys_included = include_keys
 
