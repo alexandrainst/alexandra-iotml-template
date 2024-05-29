@@ -5,16 +5,15 @@ used in the project. Here are by default
 some models which have been previously used
 
 """
+
 import logging
 from typing import Any, Dict
-import numpy as np
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from statsmodels.tsa.arima.model import ARIMA
-
 from {{ cookiecutter.library_name }}.ml_tools.exceptions import DimensionError
-
+from statsmodels.tsa.arima.model import ARIMA
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +22,7 @@ logger = logging.getLogger(__name__)
 # Example LSTM Cell
 #
 class {{ cookiecutter.class_prefix }}LSTM(nn.Module):
+    """Multivariate LSTM prediction model."""
     def __init__(
         self,
         time_window_past: int,
@@ -51,10 +51,8 @@ class {{ cookiecutter.class_prefix }}LSTM(nn.Module):
         n_hidden: int
             size of the hidden state h
         """
-        super(DynflexLSTM, self).__init__()
-        if n_hidden is None:
-            n_hidden = input_window
-        self.n_hidden = n_hidden
+        super({{ cookiecutter.class_prefix }}LSTM, self).__init__()
+        self.n_hidden = n_hidden if n_hidden is not None else time_window_past
         self.n_layers = 1
 
         self.time_window_past = time_window_past
@@ -76,7 +74,7 @@ class {{ cookiecutter.class_prefix }}LSTM(nn.Module):
         # Morph LSTM output into an output of n_predict dimension
         self.linear = nn.Linear(n_hidden, self.n_output_features)
 
-    def shape_dict_to_lstm_input(self, x: Dict[str, torch.Tensor])-> torch.Tensor:
+    def shape_dict_to_lstm_input(self, x: Dict[str, torch.Tensor]) -> torch.Tensor:
         """Shape the dictionary input into an LSTM input tensor.
 
         We use the batch_first=False convention used in pytorch.
@@ -90,18 +88,21 @@ class {{ cookiecutter.class_prefix }}LSTM(nn.Module):
         """
         one_element = list(x.keys())[0]
         input_dim = x[one_element].shape
-        if len(input_dim)!=2:
-            raise DimensionError(input_dimension=input_dim, required_dimension="[batch_size, time_steps]")
+        if len(input_dim) != 2:
+            raise DimensionError(
+                input_dimension=input_dim, required_dimension="[batch_size, time_steps]"
+            )
         
         try:
-            y = torch.vstack([v[None,:,:] for k,v in x.items()])
+            y = torch.vstack([v[None, :, :] for k, v in x.items()])
             y = torch.transpose(y, 0, 2)
-        except:
-            raise Exception("Dimension problem. input vector must have batch dimension.")
+        except Exception as e:
+            raise Exception(
+                "Dimension problem. input vector must have batch dimension."
+            )
         return y
 
-
-    def reshape_output_to_dict(self, output: torch.Tensor)-> Dict[str, torch.Tensor]:
+    def reshape_output_to_dict(self, output: torch.Tensor) -> Dict[str, torch.Tensor]:
         """Reshape the model output into a dict.
 
         This function takes in a tensor of size:
@@ -113,14 +114,12 @@ class {{ cookiecutter.class_prefix }}LSTM(nn.Module):
         [batch_size, time_window_future]
 
         """
-        output = output[self.time_window_past-self.time_window_future:,:,:]
+        output = output[self.time_window_past - self.time_window_future :, :, :]
 
         out_dict = {}
-        for i,k in self.output_features.items():
-            out_dict[k] = output[:,:,i].transpose(0,1)
+        for i, k in self.output_features.items():
+            out_dict[k] = output[:, :, i].transpose(0, 1)
         return out_dict
-
-
 
     def forward(self, x: Dict[str, torch.Tensor]):
         """Forward pass on the LSTM cell.
@@ -146,6 +145,7 @@ class {{ cookiecutter.class_prefix }}LSTM(nn.Module):
         x = self.reshape_output_to_dict(x)
 
         return x
+
 
 #
 # Autoencoders for anomaly detection
@@ -250,59 +250,3 @@ class {{ cookiecutter.class_prefix }}ARIMA:
     def __call__(self, x):
         """Dummy link to the model's call function."""
         return self.forward(x)
-
-
-#
-# Various types of loss functions
-#
-class CustomLoss(nn.Module):
-    """Custom loss for output predictor.
-
-    Calculate the maximum value of the last
-    three elements in the input sequence.
-    """
-
-    def __init__(self):
-        """Initialize the loss function."""
-        super(CustomLoss, self).__init__()
-
-    def forward(self, predicted_output, input_sequence, true_output):
-        """Forward pass on the model."""
-        last_three_max = torch.max(input_sequence[:, -10:], true_output)
-
-        # Compute the squared difference between the predicted output and last_three_max
-        loss = torch.sum((predicted_output - last_three_max) ** 2)
-
-        return loss
-
-
-class SquareLoss(nn.Module):
-    """Standard squared loss function."""
-
-    def __init__(self):
-        """Initialize the loss function."""
-        super(SquareLoss, self).__init__()
-
-    def forward(self, reconstructed_ts, original_ts):
-        """Forward pass on the model."""
-        loss = ((reconstructed_ts - original_ts) ** 2.0).sum()
-
-        # Encode the loss function
-        return loss.mean()
-
-
-class AsymmetricLoss(nn.Module):
-    """Loss function that over penalizes underpredictions."""
-
-    def __init__(self):
-        """Initialize the loss function."""
-        super(AsymmetricLoss, self).__init__()
-
-    def forward(self, predicted_output, input_sequence, true_output):
-        """Forward pass on the model."""
-        E = (predicted_output - true_output) / true_output
-        negative = 100 * E[E < 0.0] ** 2.0
-        positive = torch.abs(E[E > 0.0])
-        loss = negative.mean() + positive.mean()
-
-        return loss

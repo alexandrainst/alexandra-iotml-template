@@ -1,19 +1,16 @@
 """Set of functions used to evlauate performances of an ML model."""
 
+from typing import Dict, List
+
 import numpy as np
 from dateutil.parser import parse
-from typing import List, Dict
-from torch.utils.data import DataLoader
-
 from {{ cookiecutter.library_name }}.ml_tools.datasets import {{ cookiecutter.class_prefix }}Dataset
 from {{ cookiecutter.library_name }}.ml_tools.models import {{ cookiecutter.class_prefix }}LSTM
-
+from torch.utils.data import DataLoader
 
 
 def prediction_accuracy(model: {{ cookiecutter.class_prefix }}LSTM, dataset: {{ cookiecutter.class_prefix }}Dataset)-> List:
-    """Evaluate the accuracy of the model's prediction,
-    for a given dataset
-    """
+    """Evaluate the accuracy of the model's prediction."""
     model.cpu()
 
     accuracy_results = []

@@ -246,7 +246,9 @@ def produce_snippets(
     n_data_points = len(df[list(df.keys())[0]])
 
     if include_keys is None:
-        include_keys = df.keys()
+        keys_included = df.keys()
+    else:
+        keys_included = include_keys
 
     i = 0
     snippets: List[Any] = []
@@ -267,7 +269,7 @@ def produce_snippets(
         input_data: dict[Any, Any] = {}
         truth_data: dict[Any, Any] = {}
 
-        for k in include_keys:
+        for k in keys_included:
             v = df[k]
             current_pt[k] = [v[i]]
             input_data[k] = v[(i - time_window_past) : i]

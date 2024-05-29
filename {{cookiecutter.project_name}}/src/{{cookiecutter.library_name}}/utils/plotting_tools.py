@@ -99,8 +99,6 @@ def plot_summaries(summaries: Dict) -> List:
 	This generates one plot per feature used across all
 	trainings.
 	"""
-	summary_first = list(summaries.values())[0]
-
 	metrics = ("mean_abs_error", "mean_sq_error", "rms_error")
 	features = ("LIST YOUR FEATURES HERE.",)
 

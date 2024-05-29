@@ -62,15 +62,15 @@ class IoTMLConfig:
 
         for train_conf in self.ml_trainings:
             try:
-                d = MLTrainingConfig(**train_conf)
-                m = AIModelConfig(**train_conf["aimodel"])
-            except:
+                MLTrainingConfig(**train_conf)
+                AIModelConfig(**train_conf["aimodel"])
+            except Exception as e:
                 raise Exception("training config badly formatted")
        
         for dataset in self.ds:
             try:
-                d = DatasetConfig(**dataset)
-            except:
+                DatasetConfig(**dataset)
+            except Exception as e:
                 raise Exception("dataset config badly formatted")
 
             # validate the time windows defined in dataset

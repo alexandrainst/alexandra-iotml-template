@@ -1,37 +1,28 @@
-"""Utilities relevant for training ML models"""
+"""Utilities relevant for training ML models."""
 
+import glob
 import logging
 import os
-import glob
-from collections import OrderedDict
-from typing import Any, List, Dict
 
 import torch
-
 from {{cookiecutter.library_name}}.utils.config import AIModelConfig, MLTrainingConfig, DatasetConfig
 from {{cookiecutter.library_name}}.ml_tools.datasets import retrieve_data_from_sql, produce_snippets
 
-
 logger = logging.getLogger("utils.training_tools")
 
-TRAINING_VERSION="v0"
+TRAINING_VERSION = "v0"
 
-def generate_dataset(
-    dataset_config: DatasetConfig
-    ) -> None:
+
+def generate_dataset(dataset_config: DatasetConfig) -> None:
     """Produce a dataset of time series snippet that is stored on file."""
     dataset_name = dataset_config.name
-    logger.info(
-        f"\n\n---- Creating dataset {dataset_name} ---\n\n"
-    )
+    logger.info(f"\n\n---- Creating dataset {dataset_name} ---\n\n")
 
     for ds_subset in dataset_config.subsets:
-
         dataset_path = os.path.join(
             f"./training_results/{TRAINING_VERSION}/datasets/",
             f"{dataset_name}_dataset/{ds_subset.name}",
         )
-
 
         logger.info(f"generating {dataset_name}...")
 

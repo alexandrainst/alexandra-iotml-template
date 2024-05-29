@@ -3,7 +3,10 @@
 These classes are used to schedule and coordinate
 an ML training phase.
 """
+
+from typing import Any
 import logging
+
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
@@ -143,8 +146,7 @@ class {{cookiecutter.class_prefix}}Training(AlgoTraining):
         self.train_config = training_config
 
         # Example where we want to record PCA fits of an encoder model
-        self.pca_fit = None
-        self.pca_data = []
+        self.pca_data: Any = []
 
     def _train_one_epoch(self):
         """Override of the generic training.

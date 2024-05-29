@@ -132,7 +132,7 @@ def plot_latent_space_pca(ds_name: str, reduced_values: np.ndarray):
 ######################################################################
 @hydra.main(version_base=None, config_path="../../config", config_name="config")
 def main(config: DictConfig) -> None:
-    """main orchestrating function
+    """main orchestrating function.
 
     The script will generate 1 or several train+test datasetsset,
     based on the list of defined datasets in the config
