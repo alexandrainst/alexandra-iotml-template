@@ -12,10 +12,12 @@ from omegaconf import DictConfig
 
 
 class AIModelConfig(BaseModel):
+    """Information about the model to use in a training."""
     name: str
     aimodel_params: Dict[Any, Any]
 
 class TrainingParams(BaseModel):
+    """Parameters pertaining to the training."""
     name: str
     training_type: str
     input_features: Dict[int, str]
@@ -26,16 +28,18 @@ class TrainingParams(BaseModel):
     loss: str
 
 class MLTrainingConfig(BaseModel):
-    
+    """Parameters of an ML training."""
     aimodel: AIModelConfig
     training_params: TrainingParams
 
 class DataSubsetConfig(BaseModel):
+    """Parameters used in an SQL query."""
     name: str
     time_periods: Dict[Any, Any]
 
 
 class DatasetConfig(BaseModel):
+    """Parameters of the datasets on which trainings are run."""
     name: str
     time_window_past: int
     time_window_future: int
@@ -46,6 +50,7 @@ class DatasetConfig(BaseModel):
 
 
 class IoTMLConfig:
+    """Class for parsing an IoT+ML training config."""
 
     def __init__(self, config: DictConfig) -> None:
         """Validate and parse the omegaconfig object."""

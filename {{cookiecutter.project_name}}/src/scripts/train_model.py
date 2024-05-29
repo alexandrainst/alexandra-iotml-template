@@ -10,18 +10,13 @@ import numpy as np
 import torch
 from omegaconf import DictConfig
 from sklearn.decomposition import PCA
-from {{cookiecutter.library_name}}.ml_tools.datasets import (
-    {{cookiecutter.class_prefix}}Dataset,
-    normalize_data,
-    produce_snippets,
-    retrieve_data_from_sql,
-)
+from {{cookiecutter.library_name}}.ml_tools.datasets import {{cookiecutter.class_prefix}}Dataset
 from {{cookiecutter.library_name}}.ml_tools.models import {{cookiecutter.class_prefix}}AE, {{cookiecutter.class_prefix}}LSTM
 from {{cookiecutter.library_name}}.ml_tools.losses import {{cookiecutter.class_prefix}}Loss, RecoLoss
 from {{cookiecutter.library_name}}.ml_tools.traintest import {{cookiecutter.class_prefix}}TrainAlgo
 from {{cookiecutter.library_name}}.utils.training_tools import generate_dataset
 from {{cookiecutter.library_name}}.utils.config import IoTMLConfig, MLTrainingConfig, DatasetConfig
-from omegaconf import DictConfig
+
 logger = logging.getLogger("train_model")
 logger.level = logging.INFO
 
@@ -29,13 +24,12 @@ TRAINING_VERSION = "v2"
 
 def train_model(
     training_config: MLTrainingConfig,
-    dataset_config: DatasetConfig,
-    ) -> Any:
+    dataset_config: DatasetConfig
+) -> Any:
     """Training script for a single model."""
     dataset_name = dataset_config.name
     training_params = training_config.training_params
     training_name = training_params.name
-
 
     logger.info(
         f"\n\n---- Training {training_name} on dataset {dataset_name} ---\n\n"
@@ -49,7 +43,8 @@ def train_model(
             time_window_future=dataset_config.time_window_future,
             input_features=training_params.input_features,
             output_features=training_params.output_features,
-            **training_config.aimodel.aimodel_params)
+            **training_config.aimodel.aimodel_params
+        )
     else:
         raise Exception("Unrecognized model type.")
 
@@ -75,8 +70,7 @@ def train_model(
     )
 
     train_data = {{cookiecutter.class_prefix}}Dataset(
-        training_params=training_params,
-        dataset_path=dataset_path,
+        training_params=training_params, dataset_path=dataset_path
     )
     traintest.add_dataset("train", train_data, batch_size=training_params.batch_size)
     traintest.train(
@@ -145,7 +139,6 @@ def main(config: DictConfig) -> None:
     file. It will then train a list of model trainings
     as they are defined in the same config.
     """
-
     config = IoTMLConfig(config)
 
     for ds_conf in config.ds:
@@ -153,15 +146,15 @@ def main(config: DictConfig) -> None:
         generate_dataset(dataset_config=ds_conf)
 
         for train_conf in config.ml_trainings:
-
             # Run the training
             loss_history = train_model(
-                training_config=train_conf, 
-                dataset_config=ds_conf,
+                training_config=train_conf, dataset_config=ds_conf
             )
 
             plt.plot(loss_history, "k")
-            plt.title(f"Loss over iterations - {train_conf.training_params.training_type}")
+            plt.title(
+                f"Loss over iterations - {train_conf.training_params.training_type}"
+            )
             plt.show()
 
 
