@@ -13,7 +13,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from statsmodels.tsa.arima.model import ARIMA
 
-from {{ cookiecutter.class_prefix }}.ml_tools.exceptions import DimensionError
+from {{ cookiecutter.library_name }}.ml_tools.exceptions import DimensionError
 
 
 logger = logging.getLogger(__name__)

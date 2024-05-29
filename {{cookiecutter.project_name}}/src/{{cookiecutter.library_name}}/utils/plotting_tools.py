@@ -1,16 +1,17 @@
 """Functions for plotting various aspect of the ML train/eval pipeline."""
+
 from typing import Any, List, Dict
 
 import numpy as np
+import torch
 import matplotlib
 import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
 
-
-def plot_prediction_accuracy( accuracy_results: List)-> matplotlib.figure:
+def plot_prediction_accuracy(accuracy_results: List) -> matplotlib.figure:
 	"""Create a set of plots visualizing an output predictor's performances."""
 	first_element = accuracy_results[0]
 	n_features = len(list(first_element.keys()))
-
 
 	# First plot: next-step output forecast
 	fig, axes = plt.subplots(
@@ -26,8 +27,8 @@ def plot_prediction_accuracy( accuracy_results: List)-> matplotlib.figure:
 
 		ax.set_title(k)
 		x = [v[k]["x"] for v in accuracy_results]
-		yt = [v[k]["truth"][0,0] for v in accuracy_results]
-		yp = [v[k]["predi"][0,0] for v in accuracy_results]
+		yt = [v[k]["truth"][0, 0] for v in accuracy_results]
+		yp = [v[k]["predi"][0, 0] for v in accuracy_results]
 
 		ax.plot(x, yt, label="truth")
 		ax.plot(x, yp, label="prediction")
@@ -38,8 +39,9 @@ def plot_prediction_accuracy( accuracy_results: List)-> matplotlib.figure:
 	return fig
 
 
-def plot_anomaly_latent_space(self, training_set, test_set)-> matplotlib.figure:
-	"""
+def plot_anomaly_latent_space(self, training_set, test_set) -> matplotlib.figure:
+	"""Latent space visualization.
+
 	We plot the Latent space visualization of the training
 	and test dataset, using the PCA decomposition function
 	fitted to the train data.
@@ -100,12 +102,11 @@ def plot_summaries(summaries: Dict) -> List:
 	summary_first = list(summaries.values())[0]
 
 	metrics = ("mean_abs_error", "mean_sq_error", "rms_error")
-	features = ("LIST YOUR FEATURES HERE.")
+	features = ("LIST YOUR FEATURES HERE.",)
 
 	figlist = []
 	for feature in features:
-
-		fig, ax = plt.subplots(figsize=(10,5), layout='constrained')
+		fig, ax = plt.subplots(figsize=(10, 5), layout='constrained')
 		ax.set_ylabel('Error magnitude')
 		ax.set_title(f'performance of the training for feature: {feature}')
 		width = 0.25
@@ -117,7 +118,7 @@ def plot_summaries(summaries: Dict) -> List:
 				continue
 			relevant_train_labels.append(training_label)
 
-		relevant_results = {k: [] for k in relevant_train_labels}
+		relevant_results: Dict={k: [] for k in relevant_train_labels}
 		for training in relevant_train_labels:
 			for metric in metrics:
 				relevant_results[training].append(summaries[training][feature][metric])

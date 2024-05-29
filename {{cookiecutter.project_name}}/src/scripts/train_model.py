@@ -1,6 +1,5 @@
 """Script for training a model on the example IOTML data."""
 
-import glob
 import logging
 import os
 from typing import Any
@@ -43,9 +42,9 @@ def train_model(
     )
 
     if training_params.training_type == "anomaly_encoder":
-        model_instance = DynflexAE(**training_config.aimodel.aimodel_params)
+        model_instance = {{cookiecutter.class_prefix}}AE(**training_config.aimodel.aimodel_params)
     elif training_params.training_type == "output_predictor":
-        model_instance = DynflexLSTM(
+        model_instance = {{cookiecutter.class_prefix}}LSTM(
             time_window_past=dataset_config.time_window_past,
             time_window_future=dataset_config.time_window_future,
             input_features=training_params.input_features,
@@ -55,11 +54,11 @@ def train_model(
         raise Exception("Unrecognized model type.")
 
     if training_params.loss.lower()=="dynflexloss":
-        loss_instance = DynflexLoss()
+        loss_instance = {{cookiecutter.class_prefix}}Loss()
     else:
         loss_instance = RecoLoss()
 
-    traintest = DynflexTrainAlgo(
+    traintest = {{cookiecutter.class_prefix}}TrainAlgo(
         model=model_instance,
         training_config = training_config,
         optimizer=torch.optim.Adam(
@@ -75,7 +74,7 @@ def train_model(
         f"{dataset_name}_dataset/train/",
     )
 
-    train_data = DynflexDataset(
+    train_data = {{cookiecutter.class_prefix}}Dataset(
         training_params=training_params,
         dataset_path=dataset_path,
     )

@@ -2,6 +2,7 @@
 
 File defining the pytorch datasets used for training in this case.
 """
+
 import logging
 import os
 from collections import OrderedDict
@@ -248,7 +249,6 @@ def produce_snippets(
         include_keys = df.keys()
 
     i = 0
-    current_pts: List[Any] = []
     snippets: List[Any] = []
     while i < n_data_points:
         if i < time_window_past:

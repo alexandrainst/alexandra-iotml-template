@@ -1,15 +1,19 @@
-""" File containing the pytorch customized Loss functions
-"""
+"""File containing the pytorch customized Loss functions."""
+
 import logging
+from collections import OrderedDict
 from typing import Any, Dict
 
-import numpy as np
 import torch
 import torch.nn as nn
-
-from dynflex.ml_tools.exceptions import SnippetsKeyMismatch, DimensionError, MissingRequiredFeatures
+from {{cookiecutter.library_name}}.ml_tools.exceptions import (
+    DimensionError,
+    MissingRequiredFeatures,
+    SnippetsKeyMismatch,
+    )
 
 logger = logging.getLogger("ml_tools.losses")
+
 
 class RecoLoss(nn.Module):
     """Standard squared loss on reconstructed data."""
@@ -17,10 +21,9 @@ class RecoLoss(nn.Module):
     def __init__(self):
         super(RecoLoss, self).__init__()
 
-    def forward(self, 
-        output_ts: Dict[str, torch.Tensor],
-        truth_ts: Dict[str, torch.Tensor]
-        )-> float:
+    def forward(
+        self, output_ts: Dict[str, torch.Tensor], truth_ts: Dict[str, torch.Tensor]
+    ) -> float:
         """Compare model output with ground truth.
 
         Parameters:
@@ -34,13 +37,14 @@ class RecoLoss(nn.Module):
             the true values against wich the output must be compared.
             Must have the same shape+structure as output_ts.
         """
-
-        if output_ts.keys()!=truth_ts.keys():
+        if output_ts.keys() != truth_ts.keys():
             raise SnippetsKeyMismatch
 
         one_element = list(truth_ts.keys())[0]
-        if output_ts[one_element].shape!=truth_ts[one_element].shape:
-            raise DimensionError(output_ts[one_element].shape, truth_ts[one_element].shape)
+        if output_ts[one_element].shape != truth_ts[one_element].shape:
+            raise DimensionError(
+                output_ts[one_element].shape, truth_ts[one_element].shape
+            )
 
         loss = []
         for k in output_ts.keys():
@@ -55,27 +59,20 @@ class RecoLoss(nn.Module):
 
 class UnitarityLoss(nn.Module):
     """Loss incorporating physics contraints."""
-    def __init__(self):
-        super(DynflexLoss, self).__init__()
+
+    def __init__(self, required_features: List ):
+        """Loss incorporating physics contraints."""
+        super(UnitarityLoss, self).__init__()
         self.reco_loss = RecoLoss()
 
-    def forward(self, 
-        output_ts: Dict[str, torch.Tensor],
-        truth_ts: Dict[str, torch.Tensor],
-        ) -> float:
+    def forward(
+        self, output_ts: Dict[str, torch.Tensor], truth_ts: Dict[str, torch.Tensor],
+    ) -> float:
         """Squared loss with + unitarity constraints on some of the features.
 
         Loss evaluation onyl works if all required features are included
         in the time series snippet.
         """
-
-        required_features = {
-            "output_h2o", 
-            "output_h2", 
-            "output_co",
-            "output_co2",
-            "output_meth"
-            }
         output_keys = set(output_ts.keys())
 
         if not required_features.issubset(output_keys):
@@ -85,7 +82,7 @@ class UnitarityLoss(nn.Module):
 
         # unity loss function (mole fractions must sum up to 1.0)
         relevant_outputs = torch.stack([output_ts[k] for k in required_features])
-        unity_loss = (1.0 - relevant_outputs.sum(dim=0))**2.
+        unity_loss = (1.0 - relevant_outputs.sum(dim=0)) ** 2.0
         unity_loss = (unity_loss.sum(dim=1)).mean()
 
         return reco_part + unity_loss
