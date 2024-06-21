@@ -18,7 +18,7 @@ from {{cookiecutter.library_name}}.utils.config import TrainingParams
 logger = logging.getLogger("ml_tools.datasets")
 
 
-class {{ cookiecutter.class_prefix }}Dataset(Dataset):
+class TimeSnippetDataset(Dataset):
     """Custom wrapper on torch's Dataset class."""
 
     def __init__(
@@ -65,84 +65,103 @@ class {{ cookiecutter.class_prefix }}Dataset(Dataset):
         This example simply loads pre-saved torch tensor
         files
         """
-        if torch.is_tensor(idx):
-            idx = idx.tolist()
-
         filename = os.path.join(self.dataset_path, self.snippets[idx])
 
         data = torch.load(filename)
 
+        # Process current datapoint information
+        current_pt = data["current_pt"]
+        input_data = data["input_data"]
+
+        current_pt = de_nonify(current_pt)
+        normalized_input = normalize_data(input_data)
+
+        past = {}
+        for k in self.training_params.input_features.values():
+            v = torch.Tensor(normalized_input[k])
+            past[k] = v
+
         if self.training_params.training_type == "output_predictor":
-
-            current_pt = data["current_pt"]
-            input_data = data["input_data"]
             truth_data = data["truth_data"]
-
-            current_pt = de_nonify(current_pt)
-            normalized_input = normalize_data(input_data)
             normalized_truth = normalize_data(truth_data)
-
-            past = {}
-            for k in self.training_params.input_features.values():
-                v = torch.Tensor(normalized_input[k])
-                past[k] = v
-
             future = {}
             for k in self.training_params.output_features.values():
                 v = torch.Tensor(normalized_truth[k])
                 future[k] = v
-
-            out = {
-                "current_pt": current_pt,
-                "input": past,
-                "truth": future,
-            }
-
         elif self.training_params.training_type == "anomaly_encoder":
-            # Normalize data
-            normalized_data = normalize_data(data, static_values=self.static_values)
-            normalized_data = torch.Tensor(np.array(list(normalized_data.values())))
-            out = normalized_data.flatten()
+            future = 0.0
         else:
             raise Exception("Training type unknown.")
-        
+
+        out = {
+            "current_pt": current_pt,
+            "input": past,
+            "truth": future,
+        }
         return out
 
 
 ###############################################################
 # Data extraction and preprocessing
-def retrieve_data_from_sql(sql_table: str, start_date: str, end_date: str) -> Any:
-    """Function that extracts raw data from postgres.
+def retrieve_data_from_sql(sql_table: str, variables: List[str], start_date: str, end_date: str) -> Any:
+   """Function that extracts raw data from postgres.
 
-    In addition to the variables extracted from postgres, This function also creates
-    separate variables for time components such as the second, minute, hour and day of
-    the week.
+    In this project we produce datasets for a specific
+    turbine.
 
-    Feel free to add / remove these depending on the resolution and periodicity of your
-    time series.
+    Parameters
+    ---
+
+    sql_table: str
+        the name of the table we gather data from
+
+    variables: List[str]
+        a list of variables to extract from the table
+
+    start_date: str
+        The start of the data period, we are interested in,
+        in format "yyyy-mm-dd HH:MM:SS+ZZ"
+
+    end_date: str
+        The end of the data period, we are interested in,
+        in format "yyyy-mm-dd HH:MM:SS+ZZ"
+
     """
     session = load_session()
 
-    statement = text(
-        f"""SELECT
-                time,
-                y
+    statement = "SELECT "
+    for var in variables:
+        statement+= f"{var}, "
+    statement = statement[:-2]
+
+    statement +=
+        f"""
             FROM
                 {sql_table}
             WHERE
                 time BETWEEN '{start_date}' AND '{end_date}'
             ORDER BY 1;
         """
-    )
+    
+    statement = text(statement)
 
-    returned = session.execute(statement)
+    returned = session.execute(text(statement))
     data: OrderedDict[str, Any] = OrderedDict()
-
     data["month"] = []
     data["day"] = []
     data["weekday"] = []
     data["hour"] = []
     data["minute"] = []
+
+    data["month_s"] = []
+    data["weekday_s"] = []
+    data["hour_s"] = []
+    data["minute_s"] = []
+
+    data["month_c"] = []
+    data["weekday_c"] = []
+    data["hour_c"] = []
+    data["minute_c"] = []
     for i, x in enumerate(returned):
         row = dict(x._mapping)
         for k, v in row.items():
@@ -156,6 +175,16 @@ def retrieve_data_from_sql(sql_table: str, start_date: str, end_date: str) -> An
                 data["weekday"].append(v.weekday())
                 data["hour"].append(v.hour)
                 data["minute"].append(v.minute)
+
+                data["month_s"].append(np.sin(2 * np.pi * v.month / 12))
+                data["weekday_s"].append(np.sin(2 * np.pi * v.weekday() / 7.0))
+                data["hour_s"].append(np.sin(2 * np.pi * v.hour / 24.0))
+                data["minute_s"].append(np.sin(2 * np.pi * v.minute / 60.0))
+
+                data["month_c"].append(np.cos(2 * np.pi * v.month / 12))
+                data["weekday_c"].append(np.cos(2 * np.pi * v.weekday() / 7.0))
+                data["hour_c"].append(np.cos(2 * np.pi * v.hour / 24.0))
+                data["minute_c"].append(np.cos(2 * np.pi * v.minute / 60.0))
 
     return data
 

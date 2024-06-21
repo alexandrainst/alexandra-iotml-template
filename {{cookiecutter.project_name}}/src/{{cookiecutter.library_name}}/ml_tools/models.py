@@ -5,7 +5,6 @@ used in the project. Here are by default
 some models which have been previously used
 
 """
-
 import logging
 from typing import Any, Dict
 
@@ -15,13 +14,13 @@ import torch.nn.functional as F
 from {{ cookiecutter.library_name }}.ml_tools.exceptions import DimensionError
 from statsmodels.tsa.arima.model import ARIMA
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("ml_tools.models")
 
 
 #
 # Example LSTM Cell
 #
-class {{ cookiecutter.class_prefix }}LSTM(nn.Module):
+class LSTMCell(nn.Module):
     """Multivariate LSTM prediction model."""
     def __init__(
         self,
@@ -51,7 +50,7 @@ class {{ cookiecutter.class_prefix }}LSTM(nn.Module):
         n_hidden: int
             size of the hidden state h
         """
-        super({{ cookiecutter.class_prefix }}LSTM, self).__init__()
+        super(LSTMCell, self).__init__()
         self.n_hidden = n_hidden if n_hidden is not None else time_window_past
         self.n_layers = 1
 
@@ -150,47 +149,104 @@ class {{ cookiecutter.class_prefix }}LSTM(nn.Module):
 #
 # Autoencoders for anomaly detection
 #
-class {{ cookiecutter.class_prefix }}Encoder(nn.Module):
-    """Encoder section of autoencoder model."""
+class LinearEncoder(nn.Module):
+    """Linear encoder of arbitrary depth."""
 
-    def __init__(self, input_dims, latent_dims):
-        """Initialize model."""
-        super({{ cookiecutter.class_prefix }}Encoder, self).__init__()
-        self.linear1 = nn.Linear(input_dims, 56)
-        self.linear2 = nn.Linear(56, latent_dims)
+    def __init__(self, input_dims: int, latent_dims: List[int]):
+        """Initialize model.
+
+        Parameters
+        ----
+
+        input_dims: int
+            the initial size of the feature vector inserted.
+
+        latent_dims: List
+            A list of successively smaller dimensions for the
+            inner layers of the encoder. The list is by default
+            sorted from largest to smallest
+        """
+        super(LinearEncoder, self).__init__()
+
+        latent_dims = sorted(latent_dims, reverse=True)
+        if input_dims<=latent_dims[0]:
+            raise Exception("autoencoder input size smaller than first deep layer.")
+
+        linear_layers = OrderedDict()
+        in_layer = input_dims
+        for i, layer_dims in enumerate(latent_dims):
+            layer = nn.Linear(in_layer, layer_dims)
+            in_layer = layer_dims
+            linear_layers[f"linear_{i}"] = layer
+            linear_layers[f"relu_{i}"] = nn.ReLU()
+
+        self.linear_layers = nn.Sequential(linear_layers)
+
 
     def forward(self, x):
         """Forward pass on the model."""
         x = torch.flatten(x, start_dim=1)
-        x = F.relu(self.linear1(x))
-        return self.linear2(x)
+        x = self.linear_layers(x)
+        return x
 
 
-class {{ cookiecutter.class_prefix }}Decoder(nn.Module):
-    """Decoder section of autoencoder model."""
+class LinearDecoder(nn.Module):
+    """Linear Decoder of arbitrary depth"""
 
-    def __init__(self, latent_dims, output_dims):
-        """Initialize model."""
-        super({{ cookiecutter.class_prefix }}Decoder, self).__init__()
-        self.linear1 = nn.Linear(latent_dims, 56)
-        self.linear2 = nn.Linear(56, output_dims)
+    def __init__(self, latent_dims: List[int], output_dims: int):
+        """Initialize model.
+
+        Parameters
+        ----
+
+        latent_dims: List
+            A list of successively smaller dimensions for the
+            inner layers of the encoder. The list is by default
+            sorted from largest to smallest
+
+        output_dims: int
+            the final size of the output feature vector
+        """
+        super(LinearDecoder, self).__init__()
+        latent_dims = sorted(latent_dims)
+        if output_dims<=latent_dims[-1]:
+            raise Exception("autoencoder output size smaller than last deep layer.")
+        
+        linear_layers = OrderedDict()
+        in_layer = latent_dims[0]
+        i = 0
+        for layer_dims in latent_dims[1:]:
+            linear_layers[f"linear_{i}"] = nn.Linear(in_layer, layer_dims)
+            linear_layers[f"relu_{i}"] = nn.ReLU()
+            in_layer = layer_dims
+            i+=1
+
+        linear_layers[f"linear_{i}"] = nn.Linear(in_layer, output_dims)
+
+        self.linear_layers = nn.Sequential(linear_layers)
 
     def forward(self, x):
         """Forward pass on the model."""
         x = torch.flatten(x, start_dim=1)
-        x = F.relu(self.linear1(x))
-        return self.linear2(x)
+        x = self.linear_layers(x)
+        return x
 
 
-class {{ cookiecutter.class_prefix }}AE(nn.Module):
-    """Autoencoder model for anomaly detection."""
+class LinearAE(nn.Module):
+    """Autoencoder model of arbitrary depth."""
 
-    def __init__(self, input_dims, input_window, latent_dims):
+    def __init__(
+        self,
+        input_variables: Dict[Any, Any],
+        input_window: int,
+        latent_dims: List[int]
+        ):
         """Initialize model."""
-        super({{ cookiecutter.class_prefix }}AE, self).__init__()
-        input_size = input_dims * input_window
-        self.encoder = {{ cookiecutter.class_prefix }}Encoder(input_size, latent_dims)
-        self.decoder = {{ cookiecutter.class_prefix }}Decoder(latent_dims, input_size)
+        super(LinearAE, self).__init__()
+        input_dims = len(list(input_variables.keys()))
+        input_size = input_dims * np.abs(input_window)
+        self.encoder = LinearEncoder(input_size, latent_dims)
+        self.decoder = LinearDecoder(latent_dims, input_size)
 
     def forward(self, x):
         """Forward pass on the model."""
@@ -199,9 +255,57 @@ class {{ cookiecutter.class_prefix }}AE(nn.Module):
 
 
 #
+# Variational Autoencoder
+#
+class LinearVAE(nn.Module):
+    """Add Variational component to the CrucialAE architecture."""
+
+    def __init__(self,
+        input_variables: Dict[Any, Any],
+        input_window: int,
+        latent_dims: List[int]
+        ):
+        """Initialize model."""
+        super(LinearVAE, self).__init__()
+        input_dims = len(list(input_variables.keys()))
+        input_size = input_dims * np.abs(input_window)
+        
+        self.encoder = LinearEncoder(input_size, latent_dims)
+        self.decoder = LinearDecoder(latent_dims, input_size)
+
+        # Add another encoder layer that maps out stddev for the reparametrization
+        self.logvar_encoder = LinearEncoder(input_size, latent_dims)
+        self.logvar_decoder = LinearDecoder(latent_dims, input_size)
+
+    def forward(self, x):
+        """The entire pipeline of the VAE: 
+
+        encoder -> reparameterization -> decoder.
+        """
+        mu = self.encoder(x)
+        logVar = self.logvar_encoder(x)
+
+        z = self.reparameterize(mu, logVar)
+ 
+        out = self.decoder(z)
+        
+        return out, mu, logVar
+
+    def reparameterize(self, mu, logVar):
+        """Takes in the input mu and logVar and sample the mu + std * eps."""
+        if self.training:
+            std = torch.exp(logVar/2)
+            eps = torch.randn_like(std)
+            return mu + std * eps
+
+        return mu
+ 
+
+
+#
 # Rolling ARIMA model
 #
-class {{ cookiecutter.class_prefix }}ARIMA:
+class ARIMAModel:
     """Rolling ARIMA Model.
 
     Here we don't use an ML technique,

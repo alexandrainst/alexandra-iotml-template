@@ -88,3 +88,44 @@ class UnitarityLoss(nn.Module):
         unity_loss = (unity_loss.sum(dim=1)).mean()
 
         return reco_part + unity_loss
+
+
+class KLDivergence(nn.Module):
+    """A popular choice of loss fct for VAE's.
+
+    It compares the mu, and logvar values of a trained sampler
+    with a gaussian distribution of 1.0 variance centered at 0.
+
+    """
+    def __init__(self):
+        """INitialize the loss function."""
+        super(KLDivergence, self).__init__()
+
+    def forward(self, mu, logvar):
+        """Kullback-Leibler divergence of the sampling distribution."""
+        kl_divergence = torch.sum(
+                -0.5 * torch.sum(1 + logvar - mu**2 - logvar.exp(), dim=1), dim=0
+            )
+
+        return kl_divergence
+
+class VAELoss(nn.Module):
+    """A popular choice of loss fct for VAE's.
+
+    It compares the mu, and logvar values of a trained sampler
+    with a gaussian distribution of 1.0 variance centered at 0.
+
+    """
+    def __init__(self):
+        """INitialize the loss function."""
+        super(VAELoss, self).__init__()
+        self.kl_divergence = KLDivergence()
+        self.reco_loss = SquareLoss()
+
+    def forward(self, reconstructed_ts, original_ts, mu, logvar):
+        """Kullback-Leibler divergence of the sampling distribution."""
+
+        a = self.kl_divergence(mu, logvar)
+        b = self.reco_loss(reconstructed_ts, original_ts)
+
+        return a+b
