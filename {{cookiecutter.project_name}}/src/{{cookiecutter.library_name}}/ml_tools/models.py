@@ -116,12 +116,12 @@ class LSTMCell(nn.Module):
         """
         output = output[self.time_window_past - self.time_window_future :, :, :]
 
-        out_dict = {}
+        out_dict = OrderedDict()
         for i, k in self.output_features.items():
             out_dict[k] = output[:, :, i].transpose(0, 1)
         return out_dict
 
-    def forward(self, x: OrderedDict[str, torch.Tensor]):
+    def forward(self, x: OrderedDict[str, torch.Tensor])-> OrderedDict[str, torch.Tensor]:
         """Forward pass on the LSTM cell.
 
         We implement a couple dimensions checks to ensure that the
@@ -238,7 +238,7 @@ class LinearAE(nn.Module):
 
     def __init__(self, 
         time_window_past: int,
-        input_features: OrderedDict[str, Any],
+        input_features: OrderedDict[int, str],
         latent_dims: List[int]):
         """Autoencoder Model.
 
@@ -337,8 +337,8 @@ class LinearVAE(nn.LinearAE):
     """Add Variational component to the LinearAE architecture."""
 
     def __init__(self,
-        input_variables: OrderedDict[Any, Any],
-        input_window: int,
+        time_window_past: int,
+        input_features: OrderedDict[int, str],
         latent_dims: List[int]
         ):
         """Initialize model."""
@@ -353,7 +353,7 @@ class LinearVAE(nn.LinearAE):
         self.logvar_decoder = LinearDecoder(latent_dims, self.input_size)
 
     def forward(self, x):
-        """The entire pipeline of the VAE: 
+        """The entire pipeline of the VAE.
 
         encoder -> reparameterization -> decoder.
         """

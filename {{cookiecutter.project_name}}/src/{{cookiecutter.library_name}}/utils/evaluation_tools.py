@@ -58,25 +58,25 @@ def prediction_accuracy(model: {{ cookiecutter.class_prefix }}LSTM, dataset: {{ 
 
 
 def summarize_training_accuracy(accuracy_results: List) -> Dict:
-	"""Compute dataset-wide performance metrics to summarize model accuracy.
+    """Compute dataset-wide performance metrics to summarize model accuracy.
 
-	All values are computed across all predicted future time steps.
-	"""
-	first_element = accuracy_results[0]
-	summary = {}
-	for k in first_element.keys():
-		total_abs_diff = np.sum([v[k]["abs_diff_tot"] for v in accuracy_results])
-		mean_abs_error = np.mean([v[k]["mae"] for v in accuracy_results])
-		mean_sq_error = np.mean([v[k]["mse"] for v in accuracy_results])
-		rms_error = np.sqrt(np.mean(np.concatenate([np.array(v[k]["diff"])**2. for v in accuracy_results])))
-		mean_percent = np.mean([v[k]["percent_diff"] for v in accuracy_results])
+    All values are computed across all predicted future time steps.
+    """
+    first_element = accuracy_results[0]
+    summary = {}
+    for k in first_element.keys():
+        total_abs_diff = np.sum([v[k]["abs_diff_tot"] for v in accuracy_results])
+        mean_abs_error = np.mean([v[k]["mae"] for v in accuracy_results])
+        mean_sq_error = np.mean([v[k]["mse"] for v in accuracy_results])
+        rms_error = np.sqrt(np.mean(np.concatenate([np.array(v[k]["diff"])**2. for v in accuracy_results])))
+        mean_percent = np.mean([v[k]["percent_diff"] for v in accuracy_results])
 
-		summary[k] = {
-			"total_abs_diff": total_abs_diff,
-			"mean_abs_error": mean_abs_error,
-			"mean_sq_error": mean_sq_error,
-			"rms_error":rms_error,
-			"mean_percent": mean_percent
-		}
+        summary[k] = {
+            "total_abs_diff": total_abs_diff,
+            "mean_abs_error": mean_abs_error,
+            "mean_sq_error": mean_sq_error,
+            "rms_error":rms_error,
+            "mean_percent": mean_percent
+        }
 
-	return summary
+    return summary
