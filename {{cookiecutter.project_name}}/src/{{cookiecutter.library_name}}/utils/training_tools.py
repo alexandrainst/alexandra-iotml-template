@@ -46,16 +46,13 @@ def generate_dataset(dataset_config: DatasetConfig) -> None:
         snippets = produce_snippets(
             df=df,
             time_window_past=dataset_config.time_window_past,
-            time_window_future = dataset_config.time_window_future,
-            )
+            time_window_future=dataset_config.time_window_future,
+        )
 
         for i, snip in enumerate(snippets):
             torch.save(
                 snip,
                 os.path.join(
-                    dataset_path,
-                    f"{dataset_name}_{ds_subset.name}_sample_{i:0>6d}.pt",
+                    dataset_path, f"{dataset_name}_{ds_subset.name}_sample_{i:0>6d}.pt"
                 ),
             )
-
-

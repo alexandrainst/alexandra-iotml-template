@@ -6,18 +6,24 @@ has all element it is supposed to have
 
 """
 
+from collections import OrderedDict
 from pydantic import BaseModel, field_validator
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, List
+
 from omegaconf import DictConfig
+
 
 
 class AIModelConfig(BaseModel):
     """Information about the model to use in a training."""
+
     name: str
     aimodel_params: Dict[Any, Any]
 
+
 class TrainingParams(BaseModel):
     """Parameters pertaining to the training."""
+
     name: str
     training_type: str
     input_features: Dict[int, str]
@@ -27,19 +33,24 @@ class TrainingParams(BaseModel):
     n_epochs: int
     loss: str
 
+
 class MLTrainingConfig(BaseModel):
     """Parameters of an ML training."""
+
     aimodel: AIModelConfig
     training_params: TrainingParams
 
+
 class DataSubsetConfig(BaseModel):
     """Parameters used in an SQL query."""
+
     name: str
     time_periods: Dict[Any, Any]
 
 
 class DatasetConfig(BaseModel):
     """Parameters of the datasets on which trainings are run."""
+
     name: str
     time_window_past: int
     time_window_future: int
@@ -59,35 +70,33 @@ class IoTMLConfig:
 
     def validate_config(self):
         """implement some checks to make sure the config makes sense."""
-
         for train_conf in self.ml_trainings:
             try:
                 MLTrainingConfig(**train_conf)
                 AIModelConfig(**train_conf["aimodel"])
-            except Exception as e:
+            except Exception:
                 raise Exception("training config badly formatted")
-       
+
         for dataset in self.ds:
             try:
                 DatasetConfig(**dataset)
-            except Exception as e:
+            except Exception:
                 raise Exception("dataset config badly formatted")
 
             # validate the time windows defined in dataset
             if dataset["time_window_past"] < dataset["time_window_future"]:
-                raise Exception("future time window cannot be larger than the past time window.")
+                raise Exception(
+                    "future time window cannot be larger than the past time window."
+                )
 
-        #TODO: check that model input window size <= time_window_past
+        # TODO: check that model input window size <= time_window_past
 
     @property
     def ml_trainings(self):
         """return list of ml trainings."""
         return [x.training for x in self.config["ml_trainings"]]
 
-
     @property
     def ds(self):
         """return list of dataset configs."""
         return [x["dataset"] for x in self.config["datasets"]]
-
-

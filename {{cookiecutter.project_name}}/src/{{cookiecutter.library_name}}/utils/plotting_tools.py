@@ -1,12 +1,14 @@
 """Functions for plotting various aspect of the ML train/eval pipeline."""
 
-from typing import Any, List, Dict
+from collections import OrderedDict
+from typing import List
 
-import numpy as np
-import torch
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
+import torch
 from sklearn.decomposition import PCA
+
 
 def plot_prediction_accuracy(accuracy_results: List) -> matplotlib.figure:
     """Create a set of plots visualizing an output predictor's performances."""
@@ -105,8 +107,8 @@ def plot_summaries(summaries: Dict) -> List:
     figlist = []
     for feature in features:
         fig, ax = plt.subplots(figsize=(10, 5), layout='constrained')
-        ax.set_ylabel('Error magnitude')
-        ax.set_title(f'performance of the training for feature: {feature}')
+        ax.set_ylabel("Error magnitude")
+        ax.set_title(f"performance of the training for feature: {feature}")
         width = 0.25
         multiplier = 0
 
@@ -116,7 +118,7 @@ def plot_summaries(summaries: Dict) -> List:
                 continue
             relevant_train_labels.append(training_label)
 
-        relevant_results: Dict={k: [] for k in relevant_train_labels}
+        relevant_results: OrderedDict = {k: [] for k in relevant_train_labels}
         for training in relevant_train_labels:
             for metric in metrics:
                 relevant_results[training].append(summaries[training][feature][metric])
@@ -135,5 +137,3 @@ def plot_summaries(summaries: Dict) -> List:
         figlist.append(fig)
 
     return figlist
-
-
