@@ -3,15 +3,16 @@
 import glob
 import logging
 import os
+from collections import OrderedDict
 from pathlib import Path
 
 import numpy as np
 import torch
-from {{ cookiecutter.library_name }}.ml_tools.datasets import TimeSnippetDataset
-from {{ cookiecutter.library_name }}.ml_tools.losses import RecoLoss, UnitarityLoss
-from {{ cookiecutter.library_name }}.ml_tools.models import LinearAE, LSTMCell
-from {{ cookiecutter.library_name }}.utils.config import TrainingParams
-from {{ cookiecutter.library_name }}.utils.training_tools import generate_dataset
+from {{cookiecutter.library_name}}.ml_tools.datasets import TimeSnippetDataset
+from {{cookiecutter.library_name}}.ml_tools.losses import RecoLoss, UnitarityLoss
+from {{cookiecutter.library_name}}.ml_tools.models import LinearAE, LSTMCell
+from {{cookiecutter.library_name}}.utils.config import TrainingParams
+from {{cookiecutter.library_name}}.utils.training_tools import generate_dataset
 from torch.utils.data import DataLoader
 
 PROJECT_PATH = Path(__file__).parents[1]
@@ -121,28 +122,35 @@ def test_ae_model():
     """Initialize a model, and return its output."""
     logger.info("\nTesting Autoencoder model...\n")
 
+    latent_dims = [13, 11, 4]
     model = LinearAE(
         time_window_past=10,
         input_features={0: "input_p", 1: "input_t"},
-        latent_dims=[33],
+        latent_dims=latent_dims,
     )
+    i = 0
+    layers_size = [20] + latent_dims
+    for layer in model.encoder.linear_layers:
+        if layer.__module__ == "torch.nn.modules.linear":
+            logger.info(f"Encoder connected layer {i}: {layer}")
+            assert layer.weight.shape == (
+                layers_size[i + 1],
+                layers_size[i],
+            ), f"ERROR: input-hidden weights dimensions should be \
+            ({layers_size[i+1]}, {layers_size[i]}), not {layer.weight.shape}"
+            i += 1
 
-    logger.debug(f"Encoder weights level 1: {model.encoder.linear1.weight}")
-    logger.debug(f"Encoder weights level 2: {model.encoder.linear2.weight}")
-    logger.debug(f"Decoder weights level 1: {model.decoder.linear1.weight}")
-    logger.debug(f"Decoder weights level 2: {model.decoder.linear2.weight}")
-
-    assert model.encoder.linear1.weight.shape == (
-        56,
-        2 * 10,
-    ), f"ERROR: input-hidden weights dimensions should be \
-    (56, input_dims) {model.encoder.linear1.weight.shape}"
-
-    assert model.encoder.linear2.weight.shape == (
-        33,
-        56,
-    ), f"ERROR: input-hidden weights dimensions should be \
-    (latent_dims, 56) {model.encoder.linear2.weight.shape}"
+    layers_size = layers_size[::-1]
+    i = 0
+    for layer in model.decoder.linear_layers:
+        if layer.__module__ == "torch.nn.modules.linear":
+            logger.info(f"Decoder connected layer {i}: {layer}")
+            assert layer.weight.shape == (
+                layers_size[i + 1],
+                layers_size[i],
+            ), f"ERROR: input-hidden weights dimensions should be \
+            ({layers_size[i+1]}, {layers_size[i]}), not {layer.weight.shape}"
+            i += 1
 
     # example of a batched vector of batch size 3
     example_data = {
@@ -240,57 +248,63 @@ def test_losses():
     logger.debug("testing the loss functions...")
 
     # The batch size is 2 in this example
-    example_output = {
-        "output_meth": torch.Tensor(
-            [
-                [0.9765, 0.9762, 0.9758, 0.9752, 0.9723],
-                [0.9745, 0.9742, 0.9738, 0.9731, 0.9717],
-            ]
-        ),
-        "output_h2": torch.Tensor(
-            [
-                [0.00113, 0.00113, 0.00114, 0.00113, 0.00114],
-                [0.00114, 0.00113, 0.00113, 0.00113, 0.00113],
-            ]
-        ),
-        "output_co": torch.Tensor(
-            [
-                [0.0349, 0.0349, 0.0349, 0.0348, 0.0348],
-                [0.0348, 0.0348, 0.0347, 0.0347, 0.0346],
-            ]
-        ),
-        "output_h2o": torch.Tensor(
-            [[0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0]]
-        ),
-        "output_co2": torch.Tensor(
-            [[0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0]]
-        ),
-    }
+    example_output = OrderedDict()
+    example_output["output_meth"] = torch.Tensor(
+        [
+            [0.9765, 0.9762, 0.9758, 0.9752, 0.9723],
+            [0.9745, 0.9742, 0.9738, 0.9731, 0.9717],
+        ]
+    )
+    example_output["output_h2"] = torch.Tensor(
+        [
+            [0.00113, 0.00113, 0.00114, 0.00113, 0.00114],
+            [0.00114, 0.00113, 0.00113, 0.00113, 0.00113],
+        ]
+    )
+    example_output["output_co"] = torch.Tensor(
+        [
+            [0.0349, 0.0349, 0.0349, 0.0348, 0.0348],
+            [0.0348, 0.0348, 0.0347, 0.0347, 0.0346],
+        ]
+    )
+    example_output["output_h2o"] = torch.Tensor(
+        [[0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0]]
+    )
+    example_output["output_co2"] = torch.Tensor(
+        [[0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0]]
+    )
 
-    example_truth = {
-        "output_meth": torch.Tensor(
-            [[0.97, 0.97, 0.97, 0.97, 0.97], [0.97, 0.97, 0.97, 0.97, 0.97]]
-        ),
-        "output_h2": torch.Tensor(
-            [[0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0]]
-        ),
-        "output_co": torch.Tensor(
-            [[0.03, 0.03, 0.03, 0.03, 0.03], [0.03, 0.03, 0.03, 0.03, 0.03]]
-        ),
-        "output_h2o": torch.Tensor(
-            [[0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0]]
-        ),
-        "output_co2": torch.Tensor(
-            [[0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0]]
-        ),
-    }
+    example_truth = OrderedDict()
+    example_truth["output_meth"] = torch.Tensor(
+        [[0.97, 0.97, 0.97, 0.97, 0.97], [0.97, 0.97, 0.97, 0.97, 0.97]]
+    )
+    example_truth["output_h2"] = torch.Tensor(
+        [[0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0]]
+    )
+    example_truth["output_co"] = torch.Tensor(
+        [[0.03, 0.03, 0.03, 0.03, 0.03], [0.03, 0.03, 0.03, 0.03, 0.03]]
+    )
+    example_truth["output_h2o"] = torch.Tensor(
+        [[0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0]]
+    )
+    example_truth["output_co2"] = torch.Tensor(
+        [[0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0]]
+    )
 
     # calculate the loss manually here:
     true_reco_loss = 0.00022692855
     true_unitarity_loss = 0.0005389155500000022
 
     loss_reco = RecoLoss()(output_ts=example_output, truth_ts=example_truth)
-    loss_unitarity = UnitarityLoss()(output_ts=example_output, truth_ts=example_truth)
+    loss_unitarity = UnitarityLoss(
+        required_features=[
+            "output_meth",
+            "output_co",
+            "output_h2",
+            "output_h2o",
+            "output_co2",
+        ]
+    )(output_ts=example_output, truth_ts=example_truth)
 
     assert np.allclose(
         loss_reco, true_reco_loss, rtol=1e-10

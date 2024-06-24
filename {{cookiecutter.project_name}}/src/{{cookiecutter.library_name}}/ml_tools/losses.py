@@ -41,6 +41,9 @@ class RecoLoss(nn.Module):
             Must have the same shape+structure as output_ts.
         """
         if output_ts.keys() != truth_ts.keys():
+            logger.warning(
+                f"Mismatch between keys: {output_ts.keys()} {truth_ts.keys()}"
+            )
             raise SnippetsKeyMismatch
 
         one_element = list(truth_ts.keys())[0]
@@ -54,10 +57,10 @@ class RecoLoss(nn.Module):
             feature_loss = (output_ts[k] - truth_ts[k]) ** 2.0
             losses.append(feature_loss.sum(dim=1))
 
-        loss = torch.stack(losses, dim=0).sum(dim=0)
+        array_loss = torch.stack(losses, dim=0).sum(dim=0)
 
         # average over batch size
-        return loss.mean()
+        return array_loss.mean()
 
 
 class UnitarityLoss(nn.Module):
@@ -67,7 +70,6 @@ class UnitarityLoss(nn.Module):
         """Loss incorporating physics contraints."""
         super(UnitarityLoss, self).__init__()
         self.required_features = set(required_features)
-        self.reco_loss = RecoLoss()
 
     def forward(
         self,
@@ -84,14 +86,12 @@ class UnitarityLoss(nn.Module):
         if not self.required_features.issubset(output_keys):
             raise MissingRequiredFeatures(output_keys, self.required_features)
 
-        reco_part = self.reco_loss(output_ts, truth_ts)
-
         # unity loss function (mole fractions must sum up to 1.0)
         relevant_outputs = torch.stack([output_ts[k] for k in self.required_features])
         unity_loss = (1.0 - relevant_outputs.sum(dim=0)) ** 2.0
         unity_loss = (unity_loss.sum(dim=1)).mean()
 
-        return reco_part + unity_loss
+        return unity_loss
 
 
 class KLDivergence(nn.Module):

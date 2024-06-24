@@ -23,9 +23,9 @@ class TimeSnippetDataset(Dataset):
 
     def __init__(
         self,
-        static_values: dict[str, Any],
         training_params: TrainingParams,
         dataset_path: str,
+        static_values: dict[str, Any] | None = None,
     ) -> None:
         """Initialize the dataset class.
 
@@ -74,7 +74,7 @@ class TimeSnippetDataset(Dataset):
         input_data = data["input_data"]
 
         current_pt = de_nonify(current_pt)
-        normalized_input = normalize_data(input_data)
+        normalized_input = normalize_data(input_data, static_values=self.static_values)
 
         past = {}
         for k in self.training_params.input_features.values():
@@ -316,7 +316,9 @@ def produce_snippets(
     return snippets
 
 
-def normalize_data(df: dict[Any, Any], static_values: dict[Any, Any]) -> dict[Any, Any]:
+def normalize_data(
+    df: dict[Any, Any], static_values: dict[Any, Any] | None = None
+) -> dict[Any, Any]:
     """Normalize data, if needed with static values.
 
     Use this function to apply simple
@@ -344,9 +346,10 @@ def normalize_data(df: dict[Any, Any], static_values: dict[Any, Any]) -> dict[An
         if k == "some_large_variable":
             v = np.log10(v + 1)
 
-        mu = static_values[k]["mean"]
-        sigma = static_values[k]["std"]
-        df[k] = (v - mu) / sigma
+        if static_values is not None:
+            mu = static_values[k]["mean"]
+            sigma = static_values[k]["std"]
+            df[k] = (v - mu) / sigma
 
     return df
 

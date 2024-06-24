@@ -1,5 +1,6 @@
 """PostgreSQL connection to IoT database."""
 
+import logging
 import os
 from pathlib import Path
 
@@ -11,18 +12,25 @@ from sqlalchemy.orm import DeclarativeBase, sessionmaker
 # Determine the absolute path to the project repo
 project_path = Path(__file__).parents[3]
 
+logger = logging.getLogger("utils.sql")
+
 A = load_dotenv(os.path.join(project_path, ".env"))
 if not A:
-    raise Exception(".env not loaded.")
-
-A = load_dotenv()
-
-
-DEFAULT_POSTGRES_USER = os.environ["POSTGRES_USER"]
-DEFAULT_POSTGRES_PASSWORD = os.environ["POSTGRES_PASSWORD"]
-DEFAULT_POSTGRES_HOST = os.environ["POSTGRES_HOST"]
-DEFAULT_POSTGRES_PORT = os.environ["POSTGRES_PORT"]
-DEFAULT_POSTGRES_DB = os.environ["POSTGRES_DB"]
+    logger.warning(
+        "No .env file was loaded. \
+        You will not have access to your postgres database."
+    )
+    DEFAULT_POSTGRES_USER = None
+    DEFAULT_POSTGRES_PASSWORD = None
+    DEFAULT_POSTGRES_HOST = None
+    DEFAULT_POSTGRES_PORT = None
+    DEFAULT_POSTGRES_DB = None
+else:
+    DEFAULT_POSTGRES_USER = os.environ["POSTGRES_USER"]
+    DEFAULT_POSTGRES_PASSWORD = os.environ["POSTGRES_PASSWORD"]
+    DEFAULT_POSTGRES_HOST = os.environ["POSTGRES_HOST"]
+    DEFAULT_POSTGRES_PORT = os.environ["POSTGRES_PORT"]
+    DEFAULT_POSTGRES_DB = os.environ["POSTGRES_DB"]
 
 
 # -------------------------------------------------------------
@@ -54,11 +62,11 @@ def load_session(**modified_connection):
 
 # get the connection engine
 def get_connection(
-    user=DEFAULT_POSTGRES_USER,
-    password=DEFAULT_POSTGRES_PASSWORD,
-    host=DEFAULT_POSTGRES_HOST,
-    port=DEFAULT_POSTGRES_PORT,
-    database=DEFAULT_POSTGRES_DB,
+    user: str | None = DEFAULT_POSTGRES_USER,
+    password: str | None = DEFAULT_POSTGRES_PASSWORD,
+    host: str | None = DEFAULT_POSTGRES_HOST,
+    port: str | None = DEFAULT_POSTGRES_PORT,
+    database: str | None = DEFAULT_POSTGRES_DB,
 ):
     """Return an sqlalchemy conenction engine."""
     return create_engine(
