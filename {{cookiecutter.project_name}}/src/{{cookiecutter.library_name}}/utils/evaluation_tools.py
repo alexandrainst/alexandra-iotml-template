@@ -1,11 +1,11 @@
 """Set of functions used to evlauate performances of an ML model."""
 
-from {{ cookiecutter.library_name }}.ml_tools.datasets import TimeSnippetDataset
-from {{ cookiecutter.library_name }}.ml_tools.models import LSTMCell
 from typing import Dict, List
 
 import numpy as np
 from dateutil.parser import parse
+from {{ cookiecutter.library_name }}.ml_tools.datasets import TimeSnippetDataset
+from {{ cookiecutter.library_name }}.ml_tools.models import LSTMCell
 from torch.utils.data import DataLoader
 
 

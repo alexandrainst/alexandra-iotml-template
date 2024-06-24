@@ -2,15 +2,15 @@
 
 import logging
 from collections import OrderedDict
+from typing import List
+
+import torch
+import torch.nn as nn
 from {{cookiecutter.library_name}}.ml_tools.exceptions import (
     DimensionError,
     MissingRequiredFeatures,
     SnippetsKeyMismatch,
 )
-from typing import List
-
-import torch
-import torch.nn as nn
 
 logger = logging.getLogger("ml_tools.losses")
 
