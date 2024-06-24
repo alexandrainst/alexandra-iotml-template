@@ -5,13 +5,13 @@ used in the project. Here are by default
 some models which have been previously used
 
 """
+
 import logging
 from collections import OrderedDict
 from typing import Any, List
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from {{ cookiecutter.library_name }}.ml_tools.exceptions import DimensionError
 from statsmodels.tsa.arima.model import ARIMA
 
@@ -23,6 +23,7 @@ logger = logging.getLogger("ml_tools.models")
 #
 class LSTMCell(nn.Module):
     """Multivariate LSTM prediction model."""
+
     def __init__(
         self,
         time_window_past: int,
@@ -74,7 +75,9 @@ class LSTMCell(nn.Module):
         # Morph LSTM output into an output of n_predict dimension
         self.linear = nn.Linear(n_hidden, self.n_output_features)
 
-    def shape_dict_to_lstm_input(self, x: OrderedDict[str, torch.Tensor]) -> torch.Tensor:
+    def shape_dict_to_lstm_input(
+        self, x: OrderedDict[str, torch.Tensor]
+    ) -> torch.Tensor:
         """Shape the dictionary input into an LSTM input tensor.
 
         We use the batch_first=False convention used in pytorch.
@@ -96,13 +99,15 @@ class LSTMCell(nn.Module):
         try:
             y = torch.vstack([v[None, :, :] for k, v in x.items()])
             y = torch.transpose(y, 0, 2)
-        except Exception as e:
+        except Exception:
             raise Exception(
                 "Dimension problem. input vector must have batch dimension."
             )
         return y
 
-    def reshape_output_to_dict(self, output: torch.Tensor) -> OrderedDict[str, torch.Tensor]:
+    def reshape_output_to_dict(
+        self, output: torch.Tensor
+    ) -> OrderedDict[str, torch.Tensor]:
         """Reshape the model output into a dict.
 
         This function takes in a tensor of size:
@@ -121,7 +126,9 @@ class LSTMCell(nn.Module):
             out_dict[k] = output[:, :, i].transpose(0, 1)
         return out_dict
 
-    def forward(self, x: OrderedDict[str, torch.Tensor])-> OrderedDict[str, torch.Tensor]:
+    def forward(
+        self, x: OrderedDict[str, torch.Tensor]
+    ) -> OrderedDict[str, torch.Tensor]:
         """Forward pass on the LSTM cell.
 
         We implement a couple dimensions checks to ensure that the
@@ -170,7 +177,7 @@ class LinearEncoder(nn.Module):
         super(LinearEncoder, self).__init__()
 
         latent_dims = sorted(latent_dims, reverse=True)
-        if input_dims<=latent_dims[0]:
+        if input_dims <= latent_dims[0]:
             raise Exception("autoencoder input size smaller than first deep layer.")
 
         linear_layers = OrderedDict()
@@ -182,7 +189,6 @@ class LinearEncoder(nn.Module):
             linear_layers[f"relu_{i}"] = nn.ReLU()
 
         self.linear_layers = nn.Sequential(linear_layers)
-
 
     def forward(self, x):
         """Forward pass on the model."""
@@ -210,9 +216,9 @@ class LinearDecoder(nn.Module):
         """
         super(LinearDecoder, self).__init__()
         latent_dims = sorted(latent_dims)
-        if output_dims<=latent_dims[-1]:
+        if output_dims <= latent_dims[-1]:
             raise Exception("autoencoder output size smaller than last deep layer.")
-        
+
         linear_layers = OrderedDict()
         in_layer = latent_dims[0]
         i = 0
@@ -220,7 +226,7 @@ class LinearDecoder(nn.Module):
             linear_layers[f"linear_{i}"] = nn.Linear(in_layer, layer_dims)
             linear_layers[f"relu_{i}"] = nn.ReLU()
             in_layer = layer_dims
-            i+=1
+            i += 1
 
         linear_layers[f"linear_{i}"] = nn.Linear(in_layer, output_dims)
 
@@ -236,10 +242,12 @@ class LinearDecoder(nn.Module):
 class LinearAE(nn.Module):
     """Autoencoder model of arbitrary depth."""
 
-    def __init__(self, 
+    def __init__(
+        self,
         time_window_past: int,
         input_features: OrderedDict[int, str],
-        latent_dims: List[int]):
+        latent_dims: List[int],
+    ):
         """Autoencoder Model.
 
         Parameters:
@@ -263,7 +271,6 @@ class LinearAE(nn.Module):
 
         self.encoder = LinearEncoder(self.input_size, self.latent_dims)
         self.decoder = LinearDecoder(self.latent_dims, self.input_size)
-
 
     def shape_dict_to_ae_input(self, x: OrderedDict[str, torch.Tensor]) -> torch.Tensor:
         """Shape the dictionary input into an autoencoder input tensor.
@@ -293,7 +300,9 @@ class LinearAE(nn.Module):
             )
         return y
 
-    def reshape_output_to_dict(self, output: torch.Tensor) -> OrderedDict[str, torch.Tensor]:
+    def reshape_output_to_dict(
+        self, output: torch.Tensor
+    ) -> OrderedDict[str, torch.Tensor]:
         """Reshape the model output into a dict.
 
         This function takes in a tensor of size:
@@ -305,7 +314,7 @@ class LinearAE(nn.Module):
         [batch_size, time_window_future]
 
         """
-        out_dict= OrderedDict()
+        out_dict = OrderedDict()
         for i, k in self.input_features.items():
             out_dict[k] = output[
                 :, (i * self.time_window_past) : (i + 1) * self.time_window_past
@@ -320,7 +329,6 @@ class LinearAE(nn.Module):
 
         [batch_size, time_window_past]
         """
-
         x = self.shape_dict_to_ae_input(x)
         z = self.encoder(x)
         x = self.decoder(z)
@@ -329,23 +337,23 @@ class LinearAE(nn.Module):
         return x
 
 
-
 #
 # Variational Autoencoder
 #
 class LinearVAE(LinearAE):
     """Add Variational component to the LinearAE architecture."""
 
-    def __init__(self,
+    def __init__(
+        self,
         time_window_past: int,
         input_features: OrderedDict[int, str],
-        latent_dims: List[int]
-        ):
+        latent_dims: List[int],
+    ):
         """Initialize model."""
         super().__init__(
             time_window_past=time_window_past,
             input_features=input_features,
-            latent_dims=latent_dims
+            latent_dims=latent_dims,
         )
 
         # Add another encoder layer that maps out stddev for the reparametrization
@@ -361,20 +369,19 @@ class LinearVAE(LinearAE):
         logVar = self.logvar_encoder(x)
 
         z = self.reparameterize(mu, logVar)
- 
+
         out = self.decoder(z)
-        
+
         return out, mu, logVar
 
     def reparameterize(self, mu, logVar):
         """Takes in the input mu and logVar and sample the mu + std * eps."""
         if self.training:
-            std = torch.exp(logVar/2)
+            std = torch.exp(logVar / 2)
             eps = torch.randn_like(std)
             return mu + std * eps
 
         return mu
- 
 
 
 #

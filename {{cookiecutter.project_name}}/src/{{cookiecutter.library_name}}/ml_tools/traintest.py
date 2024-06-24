@@ -4,17 +4,14 @@ These classes are used to schedule and coordinate
 an ML training phase.
 """
 
-from typing import Any
 import logging
+from typing import Any
 
 import numpy as np
 import torch
-from torch.utils.data import DataLoader
+from {{cookiecutter.class_prefix}}.utils.config import MLTrainingConfig
 from sklearn.decomposition import PCA
 from torch.utils.data import DataLoader
-
-from {{cookiecutter.class_prefix}}.utils.config import MLTrainingConfig
-
 
 logger = logging.getLogger("ml_tools.trainalgo")
 
@@ -50,10 +47,8 @@ class AlgoTraining:
     def add_dataset(self, label, dataset, batch_size):
         """Import new pytorch datasets and load them as DataLoders."""
         self.datasets[label] = DataLoader(
-            dataset, 
-            batch_size=batch_size,
-            shuffle=True,
-            drop_last=True)
+            dataset, batch_size=batch_size, shuffle=True, drop_last=True
+        )
         self.current_dataset = label
 
     def _train_one_epoch(self):
@@ -163,10 +158,14 @@ class {{cookiecutter.class_prefix}}Training(AlgoTraining):
             if self.train_config.training_params.training_type == "output_predictor":
                 # get data onto computing device
 
-                input_data = {k: v.to(self.device) for k, v in databatch["input"].items()}
-                truth_data = {k: v.to(self.device) for k, v in databatch["truth"].items()}
+                input_data = {
+                    k: v.to(self.device) for k, v in databatch["input"].items()
+                }
+                truth_data = {
+                    k: v.to(self.device) for k, v in databatch["truth"].items()
+                }
 
-                #forward pass on model
+                # forward pass on model
                 output_data = self.model(input_data)
 
                 # Compare the predicted and target values

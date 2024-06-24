@@ -22,7 +22,7 @@ class MissingRequiredFeatures(Exception):
     def __init__(self, provided_features: set, required_features: set):
         """Compares provided features with expected ones."""
         missing_keys = required_features - provided_features
-        message = f"You are missing one or more required features: "
+        message = "You are missing one or more required features: "
         message += f"{missing_keys}"
         self.message = message
         super().__init__(self.message)

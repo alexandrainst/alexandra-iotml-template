@@ -7,13 +7,13 @@ import logging
 import os
 from collections import OrderedDict
 from typing import Any, Dict, List
+
 import numpy as np
 import torch
-from torch.utils.data import Dataset
-from sqlalchemy.sql import text
-
 from {{cookiecutter.library_name}}.utils.sql import load_session
 from {{cookiecutter.library_name}}.utils.config import TrainingParams
+from sqlalchemy.sql import text
+from torch.utils.data import Dataset
 
 logger = logging.getLogger("ml_tools.datasets")
 
@@ -93,11 +93,7 @@ class TimeSnippetDataset(Dataset):
         else:
             raise Exception("Training type unknown.")
 
-        out = {
-            "current_pt": current_pt,
-            "input": past,
-            "truth": future,
-        }
+        out = {"current_pt": current_pt, "input": past, "truth": future}
         return out
 
 
@@ -105,7 +101,7 @@ class TimeSnippetDataset(Dataset):
 # Data extraction and preprocessing
 def retrieve_data_from_sql(
     sql_table: str, variables: List[str], start_date: str, end_date: str
-    ) -> Any:
+) -> Any:
     """Function that extracts raw data from postgres.
 
     In this project we produce datasets for a specific
@@ -242,7 +238,7 @@ def produce_snippets(
     time_window_past: int,
     time_window_future: int,
     include_keys: list | None = None,
-    ) -> Any:
+) -> Any:
     """Take a historical dataset and cut it into snippets of specified dimensions.
 
     A snippet consists of three elements:

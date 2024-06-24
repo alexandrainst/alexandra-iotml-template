@@ -2,7 +2,7 @@
 
 import logging
 from collections import OrderedDict
-from typing import Any, Dict, List
+from typing import Any, List
 
 import torch
 import torch.nn as nn
@@ -10,7 +10,7 @@ from {{cookiecutter.library_name}}.ml_tools.exceptions import (
     DimensionError,
     MissingRequiredFeatures,
     SnippetsKeyMismatch,
-    )
+)
 
 logger = logging.getLogger("ml_tools.losses")
 
@@ -23,7 +23,7 @@ class RecoLoss(nn.Module):
         super(RecoLoss, self).__init__()
 
     def forward(
-        self, output_ts: Dict[str, torch.Tensor], truth_ts: Dict[str, torch.Tensor]
+        self, output_ts: OrderedDict[str, torch.Tensor], truth_ts: OrderedDict[str, torch.Tensor]
     ) -> float:
         """Compare model output with ground truth.
 
@@ -49,7 +49,7 @@ class RecoLoss(nn.Module):
 
         losses = []
         for k in output_ts.keys():
-            feature_loss = ((output_ts[k] - truth_ts[k]) ** 2.0)
+            feature_loss = (output_ts[k] - truth_ts[k]) ** 2.0
             losses.append(feature_loss.sum(dim=1))
 
         loss = torch.stack(losses, dim=0).sum(dim=0)
@@ -61,14 +61,14 @@ class RecoLoss(nn.Module):
 class UnitarityLoss(nn.Module):
     """Loss incorporating physics contraints."""
 
-    def __init__(self, required_features: List ):
+    def __init__(self, required_features: List):
         """Loss incorporating physics contraints."""
         super(UnitarityLoss, self).__init__()
         self.required_features = set(required_features)
         self.reco_loss = RecoLoss()
 
     def forward(
-        self, output_ts: Dict[str, torch.Tensor], truth_ts: Dict[str, torch.Tensor],
+        self, output_ts: OrderedDict[str, torch.Tensor], truth_ts: OrderedDict[str, torch.Tensor]
     ) -> float:
         """Squared loss with + unitarity constraints on some of the features.
 
@@ -97,6 +97,7 @@ class KLDivergence(nn.Module):
     with a gaussian distribution of 1.0 variance centered at 0.
 
     """
+
     def __init__(self):
         """INitialize the loss function."""
         super(KLDivergence, self).__init__()
@@ -104,10 +105,11 @@ class KLDivergence(nn.Module):
     def forward(self, mu, logvar):
         """Kullback-Leibler divergence of the sampling distribution."""
         kl_divergence = torch.sum(
-                -0.5 * torch.sum(1 + logvar - mu**2 - logvar.exp(), dim=1), dim=0
-            )
+            -0.5 * torch.sum(1 + logvar - mu**2 - logvar.exp(), dim=1), dim=0
+        )
 
         return kl_divergence
+
 
 class VAELoss(nn.Module):
     """A popular choice of loss fct for VAE's.
@@ -116,15 +118,15 @@ class VAELoss(nn.Module):
     with a gaussian distribution of 1.0 variance centered at 0.
 
     """
+
     def __init__(self):
-        """INitialize the loss function."""
+        """Initialize the loss function."""
         super(VAELoss, self).__init__()
         self.kl_divergence = KLDivergence()
         self.reco_loss = RecoLoss()
 
     def forward(self, reconstructed_ts, original_ts, mu, logvar):
         """Kullback-Leibler divergence of the sampling distribution."""
-
         a = self.kl_divergence(mu, logvar)
         b = self.reco_loss(reconstructed_ts, original_ts)
 

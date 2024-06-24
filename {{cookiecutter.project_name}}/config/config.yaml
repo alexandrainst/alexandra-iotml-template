@@ -12,7 +12,7 @@ dirs:
 # Define several types of ml model trainings
 ml_trainings:
   - training:
-      aimodel: 
+      aimodel:
         name: "LinearAE"
         aimodel_params:
           latent_dims: [33,22,11]
@@ -63,10 +63,10 @@ ml_trainings:
         n_epochs: 11
         loss: "RecoLoss"
 
-# define data set periods 
+# define data set periods
 datasets:
   - dataset:
-      name: "example_data"     
+      name: "example_data"
       train:
         sql_table: "example_data"
         variables:
