@@ -104,7 +104,7 @@ class TimeSnippetDataset(Dataset):
 ###############################################################
 # Data extraction and preprocessing
 def retrieve_data_from_sql(sql_table: str, variables: List[str], start_date: str, end_date: str) -> Any:
-   """Function that extracts raw data from postgres.
+    """Function that extracts raw data from postgres.
 
     In this project we produce datasets for a specific
     turbine.

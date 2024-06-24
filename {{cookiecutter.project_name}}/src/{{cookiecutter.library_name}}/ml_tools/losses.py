@@ -120,7 +120,7 @@ class VAELoss(nn.Module):
         """INitialize the loss function."""
         super(VAELoss, self).__init__()
         self.kl_divergence = KLDivergence()
-        self.reco_loss = SquareLoss()
+        self.reco_loss = RecoLoss()
 
     def forward(self, reconstructed_ts, original_ts, mu, logvar):
         """Kullback-Leibler divergence of the sampling distribution."""

@@ -6,7 +6,8 @@ some models which have been previously used
 
 """
 import logging
-from typing import Any, Dict
+from collections import OrderedDict
+from typing import Any, List
 
 import torch
 import torch.nn as nn
@@ -26,8 +27,8 @@ class LSTMCell(nn.Module):
         self,
         time_window_past: int,
         time_window_future: int,
-        input_features: Dict[int, Any],
-        output_features: Dict[int, Any],
+        input_features: OrderedDict[int, Any],
+        output_features: OrderedDict[int, Any],
         n_hidden: int | None = None,
     ) -> None:
         """Multivariate LSTM prediction model.
@@ -41,10 +42,10 @@ class LSTMCell(nn.Module):
         time_window_future: int
             number of time steps taken in the future
 
-        input_features: Dict
+        input_features: OrderedDict
             list of input features
 
-        output_features: Dict
+        output_features: OrderedDict
             list of output features
 
         n_hidden: int
@@ -73,7 +74,7 @@ class LSTMCell(nn.Module):
         # Morph LSTM output into an output of n_predict dimension
         self.linear = nn.Linear(n_hidden, self.n_output_features)
 
-    def shape_dict_to_lstm_input(self, x: Dict[str, torch.Tensor]) -> torch.Tensor:
+    def shape_dict_to_lstm_input(self, x: OrderedDict[str, torch.Tensor]) -> torch.Tensor:
         """Shape the dictionary input into an LSTM input tensor.
 
         We use the batch_first=False convention used in pytorch.
@@ -101,7 +102,7 @@ class LSTMCell(nn.Module):
             )
         return y
 
-    def reshape_output_to_dict(self, output: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def reshape_output_to_dict(self, output: torch.Tensor) -> OrderedDict[str, torch.Tensor]:
         """Reshape the model output into a dict.
 
         This function takes in a tensor of size:
@@ -120,7 +121,7 @@ class LSTMCell(nn.Module):
             out_dict[k] = output[:, :, i].transpose(0, 1)
         return out_dict
 
-    def forward(self, x: Dict[str, torch.Tensor]):
+    def forward(self, x: OrderedDict[str, torch.Tensor]):
         """Forward pass on the LSTM cell.
 
         We implement a couple dimensions checks to ensure that the
@@ -235,44 +236,114 @@ class LinearDecoder(nn.Module):
 class LinearAE(nn.Module):
     """Autoencoder model of arbitrary depth."""
 
-    def __init__(
-        self,
-        input_variables: Dict[Any, Any],
-        input_window: int,
+    def __init__(self, 
+        time_window_past: int,
+        input_features: OrderedDict[str, Any],
+        latent_dims: List[int]):
+        """Autoencoder Model.
+
+        Parameters:
+        ---
+
+        time_window_past: int
+            number of time steps taken in the past
+
+        input_features: OrderedDict
+            list of input features
+
         latent_dims: List[int]
-        ):
-        """Initialize model."""
+            dimensional size of the autoencoder bottleneck
+        """
         super(LinearAE, self).__init__()
-        input_dims = len(list(input_variables.keys()))
-        input_size = input_dims * np.abs(input_window)
-        self.encoder = LinearEncoder(input_size, latent_dims)
-        self.decoder = LinearDecoder(latent_dims, input_size)
+        self.n_features = len(list(input_features.keys()))
+        self.input_features = input_features
+        self.time_window_past = time_window_past
+        self.latent_dims = latent_dims
+        self.input_size = self.n_features * self.time_window_past
+
+        self.encoder = LinearEncoder(self.input_size, self.latent_dims)
+        self.decoder = LinearDecoder(self.latent_dims, self.input_size)
+
+
+    def shape_dict_to_ae_input(self, x: OrderedDict[str, torch.Tensor]) -> torch.Tensor:
+        """Shape the dictionary input into an autoencoder input tensor.
+
+        We use the batch_first=False convention used in pytorch.
+        x is shaped as a dict with input features of size:
+
+        [batch_size, time_window_past]
+
+        and we want to change this into a tensor of size:
+
+        [batch_size, n_features*time_window_past]
+        """
+        one_element = list(x.keys())[0]
+        input_dim = x[one_element].shape
+        if len(input_dim) != 2:
+            raise DimensionError(
+                input_dimension=input_dim,
+                required_dimension="[batch_size, time_window_past]",
+            )
+
+        try:
+            y = torch.hstack([v for k, v in x.items()])
+        except Exception:
+            raise Exception(
+                "Dimension problem. input vector must have batch dimension."
+            )
+        return y
+
+    def reshape_output_to_dict(self, output: torch.Tensor) -> OrderedDict[str, torch.Tensor]:
+        """Reshape the model output into a dict.
+
+        This function takes in a tensor of size:
+
+        [batch_size, n_features*time_window_past]
+
+        It returns a dict of output features that have size:
+
+        [batch_size, time_window_future]
+
+        """
+        out_dict= OrderedDict()
+        for i, k in self.input_features.items():
+            out_dict[k] = output[
+                :, (i * self.time_window_past) : (i + 1) * self.time_window_past
+            ]
+
+        return out_dict
 
     def forward(self, x):
-        """Forward pass on the model."""
+        """Forward pass on the Autoencoder.
+
+        The forward output is a dict of features with size:
+
+        [batch_size, time_window_past]
+        """
+
+        x = self.shape_dict_to_ae_input(x)
         z = self.encoder(x)
-        return self.decoder(z)
+        x = self.decoder(z)
+        x = self.reshape_output_to_dict(x)
+
+        return x
+
 
 
 #
 # Variational Autoencoder
 #
-class LinearVAE(nn.Module):
-    """Add Variational component to the CrucialAE architecture."""
+class LinearVAE(nn.LinearAE):
+    """Add Variational component to the LinearAE architecture."""
 
     def __init__(self,
-        input_variables: Dict[Any, Any],
+        input_variables: OrderedDict[Any, Any],
         input_window: int,
         latent_dims: List[int]
         ):
         """Initialize model."""
-        super(LinearVAE, self).__init__()
-        input_dims = len(list(input_variables.keys()))
-        input_size = input_dims * np.abs(input_window)
+        super(LinearAE, self).__init__()
         
-        self.encoder = LinearEncoder(input_size, latent_dims)
-        self.decoder = LinearDecoder(latent_dims, input_size)
-
         # Add another encoder layer that maps out stddev for the reparametrization
         self.logvar_encoder = LinearEncoder(input_size, latent_dims)
         self.logvar_decoder = LinearDecoder(latent_dims, input_size)
@@ -324,11 +395,11 @@ class ARIMAModel:
         p: int,
         d: int,
         q: int,
-        predict_variables: dict[Any, Any] | None = None,
-        input_variables: dict[Any, Any] | None = None,
+        predict_variables: OrderedDict[Any, Any] | None = None,
+        input_variables: OrderedDict[Any, Any] | None = None,
     ):
         """Initialize model."""
-        super({{ cookiecutter.class_prefix }}ARIMA, self).__init__()
+        super(ARIMAModel, self).__init__()
         self.p = p
         self.d = d
         self.q = q
