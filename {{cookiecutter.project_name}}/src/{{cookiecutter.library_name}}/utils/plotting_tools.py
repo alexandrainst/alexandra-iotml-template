@@ -118,7 +118,7 @@ def plot_summaries(summaries: OrderedDict) -> List:
                 continue
             relevant_train_labels.append(training_label)
 
-        relevant_results: OrderedDict = {k: [] for k in relevant_train_labels}
+        relevant_results = OrderedDict({k: [] for k in relevant_train_labels})
         for training in relevant_train_labels:
             for metric in metrics:
                 relevant_results[training].append(summaries[training][feature][metric])

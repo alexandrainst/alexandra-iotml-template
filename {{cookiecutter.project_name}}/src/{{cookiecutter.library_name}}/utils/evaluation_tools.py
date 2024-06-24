@@ -9,7 +9,7 @@ from {{ cookiecutter.library_name }}.ml_tools.models import {{ cookiecutter.clas
 from torch.utils.data import DataLoader
 
 
-def prediction_accuracy(model: {{ cookiecutter.class_prefix }}LSTM, dataset: {{ cookiecutter.class_prefix }}Dataset)-> List:
+def prediction_accuracy(model: {{ cookiecutter.class_prefix }}LSTM, dataset: {{ cookiecutter.class_prefix }}Dataset) -> List:
     """Evaluate the accuracy of the model's prediction."""
     model.cpu()
 
