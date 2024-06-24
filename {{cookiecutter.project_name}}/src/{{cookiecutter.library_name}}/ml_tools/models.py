@@ -333,7 +333,7 @@ class LinearAE(nn.Module):
 #
 # Variational Autoencoder
 #
-class LinearVAE(nn.LinearAE):
+class LinearVAE(LinearAE):
     """Add Variational component to the LinearAE architecture."""
 
     def __init__(self,
@@ -342,7 +342,7 @@ class LinearVAE(nn.LinearAE):
         latent_dims: List[int]
         ):
         """Initialize model."""
-        super(LinearAE, self).__init__(
+        super().__init__(
             time_window_past=time_window_past,
             input_features=input_features,
             latent_dims=latent_dims
