@@ -7,18 +7,17 @@ has all element it is supposed to have
 """
 
 from collections import OrderedDict
-from pydantic import BaseModel, field_validator
 from typing import Any, Dict, List
 
 from omegaconf import DictConfig
-
+from pydantic import BaseModel
 
 
 class AIModelConfig(BaseModel):
     """Information about the model to use in a training."""
 
     name: str
-    aimodel_params: Dict[Any, Any]
+    aimodel_params: OrderedDict[Any, Any]
 
 
 class TrainingParams(BaseModel):
@@ -26,8 +25,8 @@ class TrainingParams(BaseModel):
 
     name: str
     training_type: str
-    input_features: Dict[int, str]
-    output_features: Dict[int, str]
+    input_features: OrderedDict[int, str]
+    output_features: OrderedDict[int, str]
     learning_rate: float
     batch_size: int
     n_epochs: int
@@ -45,7 +44,7 @@ class DataSubsetConfig(BaseModel):
     """Parameters used in an SQL query."""
 
     name: str
-    time_periods: Dict[Any, Any]
+    time_periods: OrderedDict[Any, Any]
 
 
 class DatasetConfig(BaseModel):

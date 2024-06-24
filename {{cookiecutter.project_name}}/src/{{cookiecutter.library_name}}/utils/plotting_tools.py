@@ -95,7 +95,7 @@ def plot_anomaly_latent_space(self, training_set, test_set) -> matplotlib.figure
     return fig
 
 
-def plot_summaries(summaries: Dict) -> List:
+def plot_summaries(summaries: OrderedDict) -> List:
     """Plot summaries of results across several trainings.
 
     This generates one plot per feature used across all
