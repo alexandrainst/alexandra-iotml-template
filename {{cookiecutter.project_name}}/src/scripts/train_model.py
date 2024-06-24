@@ -9,10 +9,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from {{cookiecutter.library_name}}.ml_tools.datasets import TimeSnippetDataset
-from {{cookiecutter.library_name}}.ml_tools.losses import UnitarityLoss, RecoLoss
+from {{cookiecutter.library_name}}.ml_tools.losses import RecoLoss, UnitarityLoss
 from {{cookiecutter.library_name}}.ml_tools.models import LinearAE, LSTMCell
 from {{cookiecutter.library_name}}.ml_tools.traintest import {{cookiecutter.class_prefix}}TrainAlgo
-from {{cookiecutter.library_name}}.utils.config import IoTMLConfig, MLTrainingConfig, DatasetConfig
+from {{cookiecutter.library_name}}.utils.config import DatasetConfig, IoTMLConfig, MLTrainingConfig
 from {{cookiecutter.library_name}}.utils.training_tools import generate_dataset
 from omegaconf import DictConfig
 from sklearn.decomposition import PCA

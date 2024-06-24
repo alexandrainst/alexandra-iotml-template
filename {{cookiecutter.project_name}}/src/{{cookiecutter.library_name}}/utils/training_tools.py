@@ -5,7 +5,7 @@ import logging
 import os
 
 import torch
-from {{cookiecutter.library_name}}.ml_tools.datasets import retrieve_data_from_sql, produce_snippets
+from {{cookiecutter.library_name}}.ml_tools.datasets import produce_snippets, retrieve_data_from_sql
 from {{cookiecutter.library_name}}.utils.config import DatasetConfig
 
 logger = logging.getLogger("utils.training_tools")

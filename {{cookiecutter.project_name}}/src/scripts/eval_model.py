@@ -10,11 +10,11 @@ import matplotlib.pyplot as plt
 import torch
 from matplotlib.backends.backend_pdf import PdfPages
 from {{cookiecutter.library_name}}.ml_tools.datasets import TimeSnippetDataset
-from {{cookiecutter.library_name}}.ml_tools.models import LinearAE, ARIMAModel, LSTMCell
-from {{cookiecutter.library_name}}.utils.config import MLTrainingConfig, DatasetConfig, IoTMLConfig
+from {{cookiecutter.library_name}}.ml_tools.models import LinearAE, LSTMCell
+from {{cookiecutter.library_name}}.utils.config import DatasetConfig, IoTMLConfig, MLTrainingConfig
 from {{cookiecutter.library_name}}.utils.evaluation_tools import (
     prediction_accuracy,
-    summarize_training_accuracy
+    summarize_training_accuracy,
 )
 from {{cookiecutter.library_name}}.utils.plotting_tools import plot_prediction_accuracy, plot_summaries
 from omegaconf import DictConfig

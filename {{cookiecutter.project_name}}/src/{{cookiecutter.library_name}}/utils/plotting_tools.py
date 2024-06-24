@@ -106,7 +106,7 @@ def plot_summaries(summaries: OrderedDict) -> List:
 
     figlist = []
     for feature in features:
-        fig, ax = plt.subplots(figsize=(10, 5), layout='constrained')
+        fig, ax = plt.subplots(figsize=(10, 5), layout="constrained")
         ax.set_ylabel("Error magnitude")
         ax.set_title(f"performance of the training for feature: {feature}")
         width = 0.25
@@ -133,7 +133,7 @@ def plot_summaries(summaries: OrderedDict) -> List:
         # Add some text for labels, title and custom x-axis tick labels, etc.
 
         ax.set_xticks(x + width, metrics)
-        ax.legend(loc='upper left')
+        ax.legend(loc="upper left")
         figlist.append(fig)
 
     return figlist
