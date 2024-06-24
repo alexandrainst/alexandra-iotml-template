@@ -103,7 +103,9 @@ class TimeSnippetDataset(Dataset):
 
 ###############################################################
 # Data extraction and preprocessing
-def retrieve_data_from_sql(sql_table: str, variables: List[str], start_date: str, end_date: str) -> Any:
+def retrieve_data_from_sql(
+    sql_table: str, variables: List[str], start_date: str, end_date: str
+    ) -> Any:
     """Function that extracts raw data from postgres.
 
     In this project we produce datasets for a specific
@@ -131,17 +133,16 @@ def retrieve_data_from_sql(sql_table: str, variables: List[str], start_date: str
 
     statement = "SELECT "
     for var in variables:
-        statement+= f"{var}, "
+        statement += f"{var}, "
     statement = statement[:-2]
 
-    statement +=f"""
+    statement += f"""
             FROM
                 {sql_table}
             WHERE
                 time BETWEEN '{start_date}' AND '{end_date}'
             ORDER BY 1;
         """
-    
     statement = text(statement)
 
     returned = session.execute(text(statement))
@@ -240,7 +241,8 @@ def produce_snippets(
     df: dict,
     time_window_past: int,
     time_window_future: int,
-    include_keys: list|None=None) -> Any:
+    include_keys: list | None = None,
+    ) -> Any:
     """Take a historical dataset and cut it into snippets of specified dimensions.
 
     A snippet consists of three elements:
@@ -301,16 +303,16 @@ def produce_snippets(
             v = df[k]
             current_pt[k] = [v[i]]
             input_data[k] = v[(i - time_window_past) : i]
-            truth_data[k] = v[(i +1) : (i+1+time_window_future)]
+            truth_data[k] = v[(i + 1) : (i + 1 + time_window_future)]
             
         # Stop when the last snippet is empty
         if len(input_data[list(input_data.keys())[0]]) == 0:
             break
 
         snippet: dict[Any, Any] = {
-        "input_data": input_data,
-        "truth_data": truth_data,
-        "current_pt": current_pt
+            "input_data": input_data,
+            "truth_data": truth_data,
+            "current_pt": current_pt,
         }
         snippets.append(snippet)
         i += 1
