@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from {{cookiecutter.library_name}}.ml_tools.datasets import TimeSnippetDataset
-from {{cookiecutter.library_name}}.ml_tools.losses import UnitaryLoss, RecoLoss
+from {{cookiecutter.library_name}}.ml_tools.losses import UnitarityLoss, RecoLoss
 from {{cookiecutter.library_name}}.ml_tools.models import LinearAE, LSTMCell
 from {{cookiecutter.library_name}}.ml_tools.traintest import {{cookiecutter.class_prefix}}TrainAlgo
 from {{cookiecutter.library_name}}.utils.config import IoTMLConfig, MLTrainingConfig, DatasetConfig
@@ -67,7 +67,7 @@ def train_model(
         f"{dataset_name}_dataset/train/",
     )
 
-    train_data = {{cookiecutter.class_prefix}}Dataset(
+    train_data = TimeSnippetDataset(
         training_params=training_params, dataset_path=dataset_path
     )
     traintest.add_dataset("train", train_data, batch_size=training_params.batch_size)

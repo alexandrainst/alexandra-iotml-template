@@ -7,7 +7,7 @@ has all element it is supposed to have
 """
 
 from collections import OrderedDict
-from typing import Any, Dict, List
+from typing import Any, List
 
 from omegaconf import DictConfig
 from pydantic import BaseModel

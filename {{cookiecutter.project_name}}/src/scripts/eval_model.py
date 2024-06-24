@@ -60,7 +60,7 @@ def evaluate_model(
             time_window_future=dataset_config.time_window_future,
             input_features=training_params.input_features,
             output_features=training_params.output_features,
-            **training_config.aimodel.aimodel_params
+            **training_config.aimodel.aimodel_params,
         )
     else:
         raise Exception("Unrecognized model type.")
@@ -79,7 +79,7 @@ def evaluate_model(
     model_instance.eval()
 
     if training_type == "output_predictor":
-        dataset= TimeSnippetDataset(
+        dataset = TimeSnippetDataset(
             training_params=training_params, dataset_path=dataset_path
         )
         accuracy_results = prediction_accuracy(model=model_instance, dataset=dataset)

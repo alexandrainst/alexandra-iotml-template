@@ -1,4 +1,5 @@
 """Test the models and training/testing classes."""
+
 import glob
 import logging
 import os
@@ -16,7 +17,6 @@ from torch.utils.data import DataLoader
 PROJECT_PATH = Path(__file__).parents[1]
 logger = logging.getLogger("test.test_ml_components")
 TRAINING_VERSION = "v2"
-
 
 
 #
@@ -290,7 +290,7 @@ def test_losses():
     true_unitarity_loss = 0.0005389155500000022
 
     loss_reco = RecoLoss()(output_ts=example_output, truth_ts=example_truth)
-    loss_unitarity= UnitarityLoss()(output_ts=example_output, truth_ts=example_truth)
+    loss_unitarity = UnitarityLoss()(output_ts=example_output, truth_ts=example_truth)
 
     assert np.allclose(
         loss_reco, true_reco_loss, rtol=1e-10
