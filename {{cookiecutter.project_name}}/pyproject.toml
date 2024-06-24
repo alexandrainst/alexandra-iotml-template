@@ -2,10 +2,10 @@
 name = "{{cookiecutter.project_name}}"
 description = "{{cookiecutter.project_description}}"
 version = "0.0.0"
-{{'\nauthors = [\n    "' if cookiecutter.dependency_manager != 'pip'}}{{cookiecutter.author_name if cookiecutter.dependency_manager != 'pip'}}{{' <' if cookiecutter.dependency_manager != 'pip'}}{{cookiecutter.email if cookiecutter.dependency_manager != 'pip'}}{{'>",\n]' if cookiecutter.dependency_manager != 'pip'}}
+{{'authors = [\n    "' if cookiecutter.dependency_manager != 'pip'}}{{cookiecutter.author_name if cookiecutter.dependency_manager != 'pip'}}{{' <' if cookiecutter.dependency_manager != 'pip'}}{{cookiecutter.email if cookiecutter.dependency_manager != 'pip'}}{{'>",\n]' if cookiecutter.dependency_manager != 'pip'}}
 readme = "README.md"
 {{'\nlicense = ' if cookiecutter.dependency_manager != 'pip'}}{{'"MIT"' if cookiecutter.open_source == "y" and cookiecutter.dependency_manager != 'pip'}}{{'"Proprietary"' if cookiecutter.open_source != "y" and cookiecutter.dependency_manager != 'pip'}}{{'\n\n[tool.poetry.dependencies]' if cookiecutter.dependency_manager != 'pip'}}{{'python'                  if cookiecutter.dependency_manager != 'pip' else 'requires-python'}} = ">={{ cookiecutter.python_version }},<3.13"
-{{''                            if cookiecutter.dependency_manager != 'pip' else '\ndependencies = ['}}
+{{''                            if cookiecutter.dependency_manager != 'pip' else 'dependencies = ['}}
 {{'hydra-core = "^1.3.2"'       if cookiecutter.dependency_manager != 'pip' else ' "hydra-core==1.3.2",'}}
 {{'torch = "^2.1.2"'            if cookiecutter.dependency_manager != 'pip' else ' "torch==2.1.2",'}}
 {{'psycopg2-binary = "^2.9.9"'  if cookiecutter.dependency_manager != 'pip' else ' "psycopg2-binary==2.9.9",'}}
@@ -17,7 +17,6 @@ readme = "README.md"
 {{'python-dotenv = "^0.20.0"'   if cookiecutter.dependency_manager != 'pip' else ' "python-dotenv==0.20.0",'}}
 {{'statsmodel = "^0.14.1"'      if cookiecutter.dependency_manager != 'pip' else ' "statsmodel==0.14.1",'}}
 {{'sqlalchemy = "^2.0.25"'       if cookiecutter.dependency_manager != 'pip' else ' "sqlalchemy==2.0.25",\n]'}}
-
 {{'' if cookiecutter.dependency_manager != 'pip' else '\n[[project.authors]]\nname = "'}}{{cookiecutter.author_name if cookiecutter.dependency_manager == 'pip'}}
 {{'"\nemail = "' if cookiecutter.dependency_manager == 'pip'}}{{cookiecutter.email if cookiecutter.dependency_manager == 'pip'}}{{'"' if cookiecutter.dependency_manager == 'pip'}}
 
