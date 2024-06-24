@@ -1,9 +1,9 @@
-/* This SQL scripts creates views for the example data, using 
+/* This SQL scripts creates views for the example data, using
 functionalities from timescale to fill gaps */
 
 /* Create a time_bucketed, gap-filled view from the otiginal table:*/
 CREATE VIEW clean_example_data AS(
-	SELECT 
+	SELECT
 		time_bucket_gapfill('30SEC', "time") AS time,
 		interpolate(y) AS y,
 		interpolate(state) AS state

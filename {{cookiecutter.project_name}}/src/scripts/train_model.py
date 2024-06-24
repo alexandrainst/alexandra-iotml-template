@@ -8,54 +8,52 @@ import hydra
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from {{cookiecutter.library_name}}.ml_tools.datasets import TimeSnippetDataset
+from {{cookiecutter.library_name}}.ml_tools.losses import UnitaryLoss, RecoLoss
+from {{cookiecutter.library_name}}.ml_tools.models import LinearAE, LSTMCell
+from {{cookiecutter.library_name}}.ml_tools.traintest import {{cookiecutter.class_prefix}}TrainAlgo
+from {{cookiecutter.library_name}}.utils.config import IoTMLConfig, MLTrainingConfig, DatasetConfig
+from {{cookiecutter.library_name}}.utils.training_tools import generate_dataset
 from omegaconf import DictConfig
 from sklearn.decomposition import PCA
-from {{cookiecutter.library_name}}.ml_tools.datasets import {{cookiecutter.class_prefix}}Dataset
-from {{cookiecutter.library_name}}.ml_tools.models import {{cookiecutter.class_prefix}}AE, {{cookiecutter.class_prefix}}LSTM
-from {{cookiecutter.library_name}}.ml_tools.losses import {{cookiecutter.class_prefix}}Loss, RecoLoss
-from {{cookiecutter.library_name}}.ml_tools.traintest import {{cookiecutter.class_prefix}}TrainAlgo
-from {{cookiecutter.library_name}}.utils.training_tools import generate_dataset
-from {{cookiecutter.library_name}}.utils.config import IoTMLConfig, MLTrainingConfig, DatasetConfig
 
 logger = logging.getLogger("train_model")
 logger.level = logging.INFO
 
 TRAINING_VERSION = "v2"
 
+
 def train_model(
-    training_config: MLTrainingConfig,
-    dataset_config: DatasetConfig
+    training_config: MLTrainingConfig, dataset_config: DatasetConfig
 ) -> Any:
     """Training script for a single model."""
     dataset_name = dataset_config.name
     training_params = training_config.training_params
     training_name = training_params.name
 
-    logger.info(
-        f"\n\n---- Training {training_name} on dataset {dataset_name} ---\n\n"
-    )
+    logger.info(f"\n\n---- Training {training_name} on dataset {dataset_name} ---\n\n")
 
     if training_params.training_type == "anomaly_encoder":
-        model_instance = {{cookiecutter.class_prefix}}AE(**training_config.aimodel.aimodel_params)
+        model_instance = LinearAE(**training_config.aimodel.aimodel_params)
     elif training_params.training_type == "output_predictor":
-        model_instance = {{cookiecutter.class_prefix}}LSTM(
+        model_instance = LSTMCell(
             time_window_past=dataset_config.time_window_past,
             time_window_future=dataset_config.time_window_future,
             input_features=training_params.input_features,
             output_features=training_params.output_features,
-            **training_config.aimodel.aimodel_params
+            **training_config.aimodel.aimodel_params,
         )
     else:
         raise Exception("Unrecognized model type.")
 
-    if training_params.loss.lower()=="dynflexloss":
-        loss_instance = {{cookiecutter.class_prefix}}Loss()
+    if training_params.loss.lower() == "UnitarityLoss":
+        loss_instance = UnitarityLoss()
     else:
         loss_instance = RecoLoss()
 
     traintest = {{cookiecutter.class_prefix}}TrainAlgo(
         model=model_instance,
-        training_config = training_config,
+        training_config=training_config,
         optimizer=torch.optim.Adam(
             model_instance.parameters(), lr=training_params.learning_rate
         ),
@@ -76,7 +74,7 @@ def train_model(
     traintest.train(
         dataset_label="train", n_epochs=training_params.n_epochs, autosave=False
     )
-    
+
     traintest.record_session(
         output_prefix=os.path.join(
             f"./training_results/{TRAINING_VERSION}/trainings/",
@@ -132,7 +130,7 @@ def plot_latent_space_pca(ds_name: str, reduced_values: np.ndarray):
 ######################################################################
 @hydra.main(version_base=None, config_path="../../config", config_name="config")
 def main(config: DictConfig) -> None:
-    """main orchestrating function.
+    """Main orchestrating function.
 
     The script will generate 1 or several train+test datasetsset,
     based on the list of defined datasets in the config
@@ -163,6 +161,6 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser("Train a model on example data")
     datasets = {  # Training phase: start periods with only a few days of opened park
-        "train": {"start": "2024-01-01 00:00:00", "end": "2024-01-01 15:00:00"},
+        "train": {"start": "2024-01-01 00:00:00", "end": "2024-01-01 15:00:00"}
     }
     main()

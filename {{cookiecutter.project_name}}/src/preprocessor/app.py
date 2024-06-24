@@ -3,6 +3,7 @@
 Use this application to service an application
 that requires data preprocessing, prior to inference.
 """
+
 from fastapi import FastAPI
 
 app = FastAPI()

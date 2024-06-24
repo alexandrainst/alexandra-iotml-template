@@ -68,7 +68,7 @@ class IoTMLConfig:
         self.validate_config()
 
     def validate_config(self):
-        """implement some checks to make sure the config makes sense."""
+        """Implement some checks to make sure the config makes sense."""
         for train_conf in self.ml_trainings:
             try:
                 MLTrainingConfig(**train_conf)
@@ -92,10 +92,10 @@ class IoTMLConfig:
 
     @property
     def ml_trainings(self):
-        """return list of ml trainings."""
+        """Return list of ml trainings."""
         return [x.training for x in self.config["ml_trainings"]]
 
     @property
     def ds(self):
-        """return list of dataset configs."""
+        """Return list of dataset configs."""
         return [x["dataset"] for x in self.config["datasets"]]
