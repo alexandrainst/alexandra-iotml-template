@@ -134,8 +134,7 @@ def retrieve_data_from_sql(sql_table: str, variables: List[str], start_date: str
         statement+= f"{var}, "
     statement = statement[:-2]
 
-    statement +=
-        f"""
+    statement +=f"""
             FROM
                 {sql_table}
             WHERE

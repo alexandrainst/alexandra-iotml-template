@@ -192,7 +192,7 @@ class LinearEncoder(nn.Module):
 
 
 class LinearDecoder(nn.Module):
-    """Linear Decoder of arbitrary depth"""
+    """Linear Decoder of arbitrary depth."""
 
     def __init__(self, latent_dims: List[int], output_dims: int):
         """Initialize model.
@@ -342,11 +342,15 @@ class LinearVAE(nn.LinearAE):
         latent_dims: List[int]
         ):
         """Initialize model."""
-        super(LinearAE, self).__init__()
-        
+        super(LinearAE, self).__init__(
+            time_window_past=time_window_past,
+            input_features=input_features,
+            latent_dims=latent_dims
+        )
+
         # Add another encoder layer that maps out stddev for the reparametrization
-        self.logvar_encoder = LinearEncoder(input_size, latent_dims)
-        self.logvar_decoder = LinearDecoder(latent_dims, input_size)
+        self.logvar_encoder = LinearEncoder(self.input_size, latent_dims)
+        self.logvar_decoder = LinearDecoder(latent_dims, self.input_size)
 
     def forward(self, x):
         """The entire pipeline of the VAE: 
