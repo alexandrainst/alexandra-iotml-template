@@ -116,7 +116,7 @@ def fix_dot_env_file(non_interactive: bool, include_openai: bool) -> None:
                 else:
                     value = input(desired_env_vars[env_var])
 
-            f.write(f'{env_var}="{value}"\n')
+            f.write(f"{env_var}={value}\n")
 
     # Remove the name and email file
     name_and_email_path.unlink()
