@@ -15,7 +15,7 @@ readme = "README.md"
 {{'numpy = "^1.26.3"'           if cookiecutter.dependency_manager != 'pip' else ' "numpy==1.26.3",'}}
 {{'python-dateutil = "^2.8.2"'  if cookiecutter.dependency_manager != 'pip' else ' "python-dateutil==2.8.2",'}}
 {{'python-dotenv = "^0.20.0"'   if cookiecutter.dependency_manager != 'pip' else ' "python-dotenv==0.20.0",'}}
-{{'statsmodel = "^0.14.2"'      if cookiecutter.dependency_manager != 'pip' else ' "statsmodel==0.14.2",'}}
+{{'statsmodels = "^0.14.2"'      if cookiecutter.dependency_manager != 'pip' else ' "statsmodels==0.14.2",'}}
 {{'sqlalchemy = "^2.0.25"'       if cookiecutter.dependency_manager != 'pip' else ' "sqlalchemy==2.0.25",\n]'}}
 {{'' if cookiecutter.dependency_manager != 'pip' else '\n[[project.authors]]\nname = "'}}{{cookiecutter.author_name if cookiecutter.dependency_manager == 'pip'}}
 {{'"\nemail = "' if cookiecutter.dependency_manager == 'pip'}}{{cookiecutter.email if cookiecutter.dependency_manager == 'pip'}}{{'"' if cookiecutter.dependency_manager == 'pip'}}
