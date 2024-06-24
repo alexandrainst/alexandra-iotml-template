@@ -13,7 +13,7 @@ class DimensionError(Exception):
 
 
 class SnippetsKeyMismatch(Exception):
-    """The keys of one snippet do not match the other.""" 
+    """The keys of one snippet do not match the other."""
 
 
 class MissingRequiredFeatures(Exception):
@@ -26,4 +26,3 @@ class MissingRequiredFeatures(Exception):
         message += f"{missing_keys}"
         self.message = message
         super().__init__(self.message)
-

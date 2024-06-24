@@ -2,7 +2,7 @@
 
 import logging
 from collections import OrderedDict
-from typing import Any, List
+from typing import List
 
 import torch
 import torch.nn as nn
@@ -23,7 +23,9 @@ class RecoLoss(nn.Module):
         super(RecoLoss, self).__init__()
 
     def forward(
-        self, output_ts: OrderedDict[str, torch.Tensor], truth_ts: OrderedDict[str, torch.Tensor]
+        self,
+        output_ts: OrderedDict[str, torch.Tensor],
+        truth_ts: OrderedDict[str, torch.Tensor],
     ) -> float:
         """Compare model output with ground truth.
 
@@ -68,7 +70,9 @@ class UnitarityLoss(nn.Module):
         self.reco_loss = RecoLoss()
 
     def forward(
-        self, output_ts: OrderedDict[str, torch.Tensor], truth_ts: OrderedDict[str, torch.Tensor]
+        self,
+        output_ts: OrderedDict[str, torch.Tensor],
+        truth_ts: OrderedDict[str, torch.Tensor],
     ) -> float:
         """Squared loss with + unitarity constraints on some of the features.
 
@@ -130,4 +134,4 @@ class VAELoss(nn.Module):
         a = self.kl_divergence(mu, logvar)
         b = self.reco_loss(reconstructed_ts, original_ts)
 
-        return a+b
+        return a + b

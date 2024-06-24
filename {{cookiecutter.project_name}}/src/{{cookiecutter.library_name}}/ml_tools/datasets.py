@@ -10,8 +10,8 @@ from typing import Any, Dict, List
 
 import numpy as np
 import torch
-from {{cookiecutter.library_name}}.utils.sql import load_session
 from {{cookiecutter.library_name}}.utils.config import TrainingParams
+from {{cookiecutter.library_name}}.utils.sql import load_session
 from sqlalchemy.sql import text
 from torch.utils.data import Dataset
 
@@ -300,7 +300,7 @@ def produce_snippets(
             current_pt[k] = [v[i]]
             input_data[k] = v[(i - time_window_past) : i]
             truth_data[k] = v[(i + 1) : (i + 1 + time_window_future)]
-            
+
         # Stop when the last snippet is empty
         if len(input_data[list(input_data.keys())[0]]) == 0:
             break

@@ -84,9 +84,9 @@ class LSTMCell(nn.Module):
         x is shaped as a dict with input festures of size:
 
         [batch_size, time_steps]
-        
+
         and we want to change this into a tensor of size:
-        
+
         [time_window_past, batch_size, n_features]
         """
         one_element = list(x.keys())[0]
@@ -95,7 +95,7 @@ class LSTMCell(nn.Module):
             raise DimensionError(
                 input_dimension=input_dim, required_dimension="[batch_size, time_steps]"
             )
-        
+
         try:
             y = torch.vstack([v[None, :, :] for k, v in x.items()])
             y = torch.transpose(y, 0, 2)
@@ -139,7 +139,7 @@ class LSTMCell(nn.Module):
         [batch_size, time_window_future]
         """
         x = self.shape_dict_to_lstm_input(x)
-       
+
         # flatten parameter storage for GPU's:
         self.lstm.flatten_parameters()
 
