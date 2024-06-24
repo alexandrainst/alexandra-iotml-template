@@ -3,10 +3,10 @@
 import glob
 import logging
 import os
-
-import torch
 from {{cookiecutter.library_name}}.ml_tools.datasets import produce_snippets, retrieve_data_from_sql
 from {{cookiecutter.library_name}}.utils.config import DatasetConfig
+
+import torch
 
 logger = logging.getLogger("utils.training_tools")
 

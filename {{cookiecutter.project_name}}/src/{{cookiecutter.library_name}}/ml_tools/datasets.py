@@ -6,12 +6,12 @@ File defining the pytorch datasets used for training in this case.
 import logging
 import os
 from collections import OrderedDict
+from {{cookiecutter.library_name}}.utils.config import TrainingParams
+from {{cookiecutter.library_name}}.utils.sql import load_session
 from typing import Any, Dict, List
 
 import numpy as np
 import torch
-from {{cookiecutter.library_name}}.utils.config import TrainingParams
-from {{cookiecutter.library_name}}.utils.sql import load_session
 from sqlalchemy.sql import text
 from torch.utils.data import Dataset
 

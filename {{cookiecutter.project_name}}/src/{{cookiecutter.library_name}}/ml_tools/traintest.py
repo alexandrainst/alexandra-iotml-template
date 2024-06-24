@@ -9,8 +9,8 @@ from typing import Any
 
 import numpy as np
 import torch
-from {{cookiecutter.class_prefix}}.utils.config import MLTrainingConfig
 from sklearn.decomposition import PCA
+from {{cookiecutter.class_prefix}}.utils.config import MLTrainingConfig
 from torch.utils.data import DataLoader
 
 logger = logging.getLogger("ml_tools.trainalgo")
