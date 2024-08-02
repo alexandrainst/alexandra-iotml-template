@@ -4,7 +4,8 @@ description = "{{cookiecutter.project_description}}"
 version = "0.0.0"
 {{'authors = [\n    "' if cookiecutter.dependency_manager != 'pip'}}{{cookiecutter.author_name if cookiecutter.dependency_manager != 'pip'}}{{' <' if cookiecutter.dependency_manager != 'pip'}}{{cookiecutter.email if cookiecutter.dependency_manager != 'pip'}}{{'>",\n]' if cookiecutter.dependency_manager != 'pip'}}
 readme = "README.md"
-{{'\nlicense = ' if cookiecutter.dependency_manager != 'pip'}}{{'"MIT"' if cookiecutter.open_source == "y" and cookiecutter.dependency_manager != 'pip'}}{{'"Proprietary"' if cookiecutter.open_source != "y" and cookiecutter.dependency_manager != 'pip'}}{{'\n\n[tool.poetry.dependencies]' if cookiecutter.dependency_manager != 'pip'}}{{'python'                  if cookiecutter.dependency_manager != 'pip' else 'requires-python'}} = ">={{ cookiecutter.python_version }},<3.13"
+{{'\nlicense = ' if cookiecutter.dependency_manager != 'pip'}}{{'"MIT"' if cookiecutter.open_source == "y" and cookiecutter.dependency_manager != 'pip'}}{{'"Proprietary"' if cookiecutter.open_source != "y" and cookiecutter.dependency_manager != 'pip'}}{{'\n\n[tool.poetry.dependencies]' if cookiecutter.dependency_manager != 'pip'}}
+{{'python'                  if cookiecutter.dependency_manager != 'pip' else 'requires-python'}} = ">={{ cookiecutter.python_version }},<3.13"
 {{''                            if cookiecutter.dependency_manager != 'pip' else 'dependencies = ['}}
 {{'hydra-core = "^1.3.2"'       if cookiecutter.dependency_manager != 'pip' else ' "hydra-core==1.3.2",'}}
 {{'torch = "^2.1.2"'            if cookiecutter.dependency_manager != 'pip' else ' "torch==2.1.2",'}}
