@@ -11,33 +11,42 @@ on:
       - main
 
 jobs:
-  lint:
+  code-check:
     if: github.event.pull_request.draft == false
-    runs-on: {{'ubuntu-latest' if cookiecutter.open_source == 'y' else '[self-hosted, self-hosted-ubuntu-latest]'}}
+    {% if cookiecutter.open_source == 'y' -%}
+    runs-on: ubuntu-latest
+    {% else -%}
+  runs-on: [self-hosted, self-hosted-ubuntu-latest]
+    {% endif -%}
     steps:
-      - uses: actions/checkout@v4
-      - uses: jpetrucciani/ruff-check@main
+      - uses: actions/checkout@v{{ cookiecutter._checkout_action_version }}
+      - uses: actions/setup-python@v{{ cookiecutter._setup_python_action_version }}
+        with:
+          python-version: "{{ cookiecutter.python_version }}"
+      - uses: pre-commit/action@v{{ cookiecutter._pre_commit_action_version }}
 
   pytest:
     if: github.event.pull_request.draft == false
     strategy:
         matrix:
-            os: [{{'windows-latest, macos-latest, ubuntu-latest' if cookiecutter.open_source == 'y' else 'self-hosted-ubuntu-latest'}}]
+            {% if cookiecutter.open_source == 'y' -%}
+            os: [windows-latest, macos-latest, ubuntu-latest]
+            {% else -%}
+            os: [self-hosted-ubuntu-latest]
+            {% endif -%}
             python-version: ["{{ cookiecutter.python_version }}"]
     runs-on: {% raw %}${{ matrix.os }}{% endraw %}
     steps:
-      - uses: actions/checkout@v4
-{{'\n      - name: Install Poetry\n        run: pipx install poetry==1.8.2\n\n' if cookiecutter.dependency_manager != 'pip'}}
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v{{ cookiecutter._checkout_action_version }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v{{ cookiecutter._setup_uv_action_version }}
         with:
+          enable-cache: true
           python-version: {% raw %}${{ matrix.python-version }}{% endraw %}
-          cache: {{'"poetry"' if cookiecutter.dependency_manager != 'pip' else 'pip'}}
 
       - name: Install Dependencies
-        run: |
-          {{'poetry env use ' if cookiecutter.dependency_manager != 'pip' else 'python'}}{% raw %}"${{ matrix.python-version }}"{% endraw %}{{'' if cookiecutter.dependency_manager != 'pip' else ' -m venv .venv'}}
-          {{'poetry install' if cookiecutter.dependency_manager != 'pip' else '. .venv/bin/activate && pip install .[dev]'}}
+        run: uv sync --all-extras
 
       - name: Test with pytest
-        run: {{'poetry run' if cookiecutter.dependency_manager != 'pip' else '. .venv/bin/activate && python -m'}} pytest
+        run: uv run --no-cache pytest

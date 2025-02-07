@@ -1,7 +1,7 @@
 """Checks related to the .env file in the repository.
 
 Usage:
-    python src/scripts/fix_dot_env_file.py [--non-interactive] [--include-openai]
+    uv run src/scripts/fix_dot_env_file.py [--non-interactive]
 """
 
 import subprocess
@@ -12,9 +12,6 @@ import click
 
 # List of all the environment variables that requested via UI
 DESIRED_ENVIRONMENT_VARIABLES = dict(
-    GPG_KEY_ID="Enter GPG key ID or leave empty if you do not want to use it. Type "
-    "`gpg --list-secret-keys --keyid-format=long | grep sec | sed -E "
-    "'s/.*\/([^ ]+).*/\\1/'` to see your key ID:\n> ",  # noqa
     GIT_NAME="Enter your full name, to be shown in Git commits:\n> ",
     GIT_EMAIL="Enter your email, as registered on your Github account:\n> ",
     POSTGRES_PASSWORD="Enter a PostgreSQL superuser password for timescale:\n> ",
@@ -28,8 +25,6 @@ PREDEFINED_ENVIRONMENT_VARIABLES = dict(
     POSTGRES_USER="admin",
 )
 
-OPENAI_ENVIRONMENT_VARIABLES = dict(OPENAI_API_KEY="Enter your OpenAI API key:\n> ")
-
 
 @click.command()
 @click.option(
@@ -38,20 +33,12 @@ OPENAI_ENVIRONMENT_VARIABLES = dict(OPENAI_API_KEY="Enter your OpenAI API key:\n
     default=False,
     help="If set, the script will not ask for user input.",
 )
-@click.option(
-    "--include-openai",
-    is_flag=True,
-    default=False,
-    help="If set, the script will also ask for OpenAI environment variables.",
-)
-def fix_dot_env_file(non_interactive: bool, include_openai: bool) -> None:
+def fix_dot_env_file(non_interactive: bool) -> None:
     """Ensures that the .env file exists and contains all desired variables.
 
     Args:
         non_interactive:
             If set, the script will not ask for user input.
-        include_openai:
-            If set, the script will also ask for OpenAI environment variables.
     """
     env_path = Path(".env")
     name_and_email_path = Path(".name_and_email")
@@ -61,7 +48,9 @@ def fix_dot_env_file(non_interactive: bool, include_openai: bool) -> None:
     name_and_email_path.touch(exist_ok=True)
 
     # Extract all the lines in the files
-    env_file_lines = env_path.read_text().splitlines(keepends=False)
+    env_file_lines = [
+        line for line in env_path.read_text().splitlines(keepends=False) if line.strip()
+    ]
     name_and_email_file_lines = name_and_email_path.read_text().splitlines(
         keepends=False
     )
@@ -73,8 +62,6 @@ def fix_dot_env_file(non_interactive: bool, include_openai: bool) -> None:
     }
 
     desired_env_vars = DESIRED_ENVIRONMENT_VARIABLES
-    if include_openai:
-        desired_env_vars |= OPENAI_ENVIRONMENT_VARIABLES
 
     # For each of the desired environment variables, check if it exists in the .env
     # file
@@ -92,23 +79,6 @@ def fix_dot_env_file(non_interactive: bool, include_openai: bool) -> None:
 
             if env_var in name_and_email_vars:
                 value = name_and_email_vars[env_var]
-            elif env_var == "GPG_KEY_ID":
-                gpg = subprocess.Popen(
-                    ["gpg", "--list-secret-keys", "--keyid-format=long"],
-                    stdout=subprocess.PIPE,
-                )
-                grep = subprocess.Popen(
-                    ["grep", "sec"], stdin=gpg.stdout, stdout=subprocess.PIPE
-                )
-                value = (
-                    subprocess.check_output(
-                        ["sed", "-E", "s/.*\\/([^ ]+).*/\\1/"], stdin=grep.stdout
-                    )
-                    .decode()
-                    .strip("\n")
-                )
-                gpg.wait()
-                grep.wait()
 
             if value == "" and not non_interactive:
                 if "PASSWORD" in env_var.upper():

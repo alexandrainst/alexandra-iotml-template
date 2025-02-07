@@ -1,47 +1,68 @@
-{{'[tool.poetry]' if cookiecutter.dependency_manager != 'pip' else '[project]'}}
+[project]
 name = "{{cookiecutter.project_name}}"
-description = "{{cookiecutter.project_description}}"
 version = "0.0.0"
-{{'authors = [\n    "' if cookiecutter.dependency_manager != 'pip'}}{{cookiecutter.author_name if cookiecutter.dependency_manager != 'pip'}}{{' <' if cookiecutter.dependency_manager != 'pip'}}{{cookiecutter.email if cookiecutter.dependency_manager != 'pip'}}{{'>",\n]' if cookiecutter.dependency_manager != 'pip'}}
+description = "{{cookiecutter.project_description}}"
 readme = "README.md"
-{{'\nlicense = ' if cookiecutter.dependency_manager != 'pip'}}{{'"MIT"' if cookiecutter.open_source == "y" and cookiecutter.dependency_manager != 'pip'}}{{'"Proprietary"' if cookiecutter.open_source != "y" and cookiecutter.dependency_manager != 'pip'}}{{'\n\n[tool.poetry.dependencies]' if cookiecutter.dependency_manager != 'pip'}}
-{{'python'                  if cookiecutter.dependency_manager != 'pip' else 'requires-python'}} = ">={{ cookiecutter.python_version }},<3.13"
-{{''                            if cookiecutter.dependency_manager != 'pip' else 'dependencies = ['}}
-{{'hydra-core = "^1.3.2"'       if cookiecutter.dependency_manager != 'pip' else ' "hydra-core==1.3.2",'}}
-{{'torch = "^2.1.2"'            if cookiecutter.dependency_manager != 'pip' else ' "torch==2.1.2",'}}
-{{'psycopg2-binary = "^2.9.9"'  if cookiecutter.dependency_manager != 'pip' else ' "psycopg2-binary==2.9.9",'}}
-{{'scikit-learn = "^1.4.0"'     if cookiecutter.dependency_manager != 'pip' else ' "scikit-learn==1.4.0",'}}
-{{'pydantic = "^2.7.1"'         if cookiecutter.dependency_manager != 'pip' else ' "pydantic==2.7.1",'}}
-{{'matplotlib = "^3.8.2"'       if cookiecutter.dependency_manager != 'pip' else ' "matplotlib==3.8.2",'}}
-{{'numpy = "^1.26.3"'           if cookiecutter.dependency_manager != 'pip' else ' "numpy==1.26.3",'}}
-{{'python-dateutil = "^2.8.2"'  if cookiecutter.dependency_manager != 'pip' else ' "python-dateutil==2.8.2",'}}
-{{'python-dotenv = "^0.20.0"'   if cookiecutter.dependency_manager != 'pip' else ' "python-dotenv==0.20.0",'}}
-{{'statsmodels = "^0.14.2"'      if cookiecutter.dependency_manager != 'pip' else ' "statsmodels==0.14.2",'}}
-{{'sqlalchemy = "^2.0.25"'       if cookiecutter.dependency_manager != 'pip' else ' "sqlalchemy==2.0.25",\n]'}}
-{{'' if cookiecutter.dependency_manager != 'pip' else '\n[[project.authors]]\nname = "'}}{{cookiecutter.author_name if cookiecutter.dependency_manager == 'pip'}}
-{{'"\nemail = "' if cookiecutter.dependency_manager == 'pip'}}{{cookiecutter.email if cookiecutter.dependency_manager == 'pip'}}{{'"' if cookiecutter.dependency_manager == 'pip'}}
-
-[build-system]
-requires = [
-    "{{'poetry-core>=1.0.0' if cookiecutter.dependency_manager != 'pip' else 'setuptools>=68.0.0'}}"
+authors = [
+    {name = "{{cookiecutter.author_name}}", email = "{{cookiecutter.email}}"},
 ]
-build-backend = "{{'poetry.core.masonry.api' if cookiecutter.dependency_manager != 'pip' else 'setuptools.build_meta'}}"
-{{'\n[project.license]\nfile = "LICENSE"\n' if cookiecutter.dependency_manager == 'pip'}}
-{{'[tool.poetry.group.dev.dependencies]' if cookiecutter.dependency_manager != 'pip' else '[project.optional-dependencies]\ndev = ['}}
-{{'pytest = ">=8.1.1"'     if cookiecutter.dependency_manager != 'pip' else ' "pytest==8.1.1",'}}
-{{'pytest-cov = ">=4.1.0"' if cookiecutter.dependency_manager != 'pip' else ' "pytest-cov==4.1.0",'}}
-{{'pre-commit = ">=3.6.2"' if cookiecutter.dependency_manager != 'pip' else ' "pre-commit==3.6.2",'}}
-{{'pdoc = ">=14.1.0"'      if cookiecutter.dependency_manager != 'pip' else ' "pdoc==14.1.0",'}}
-{{'readme-coverage-badger = ">=0.1.2"' if cookiecutter.dependency_manager != 'pip' else ' "readme-coverage-badger==0.1.2",'}}
-{{'click = ">=8.1.7"'      if cookiecutter.dependency_manager != 'pip' else ' "click==8.1.7",'}}
-{{'ruff = ">=0.3.2"'       if cookiecutter.dependency_manager != 'pip' else ' "ruff==0.3.2",'}}
-{{'mypy = ">=1.9.0"'       if cookiecutter.dependency_manager != 'pip' else ' "mypy==1.9.0",'}}
-{{'nbstripout = ">=0.7.1"' if cookiecutter.dependency_manager != 'pip' else ' "nbstripout==0.7.1",'}}
-{{''                       if cookiecutter.dependency_manager != 'pip' else ' "coverage[toml]==5.5",'}}
-{{'[[tool.poetry.source]]\nname = "pypi"' if cookiecutter.dependency_manager != 'pip' else ']'}}
+maintainers = [
+    {name = "{{cookiecutter.author_name}}", email = "{{cookiecutter.email}}"},
+]
+requires-python = ">={{ cookiecutter.python_version }},<4.0"
+dependencies = [
+    "hydra-core>={{ cookiecutter._hydra_version }}",
+]
+
+[project.urls]
+Repository = "https://github.com/alexandrainst/{{cookiecutter.project_name}}"
+Issues = "https://github.com/alexandrainst/{{cookiecutter.project_name}}/issues"
+
+[project.license]
+{% if cookiecutter.open_source != 'y' -%}
+text = "Proprietary"
+
+{% else -%}
+file = "LICENSE"
+
+{% endif -%}
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>={{ cookiecutter._pytest_version }}",
+    "pytest-cov>={{ cookiecutter._pytest_cov_version }}",
+    "pre-commit>={{ cookiecutter._pre_commit_version }}",
+    "readme-coverage-badger>={{ cookiecutter._readme_coverage_badger_version }}",
+    "click>={{ cookiecutter._click_version }}",
+    "ruff>={{ cookiecutter._ruff_version }}",
+    "mypy>={{ cookiecutter._mypy_version }}",
+    "nbstripout>={{ cookiecutter._nbstripout_version }}",
+    "coverage>={{ cookiecutter._coverage_version }}",
+    "mkdocs-material>={{ cookiecutter._mkdocs_material_version }}",
+    "mkdocs-include-markdown-plugin>={{ cookiecutter._mkdocs_plugin_include_markdown_version }}",
+    "mkdocs-include-dir-to-nav>={{ cookiecutter._mkdocs_plugin_include_dir_to_nav_version }}",
+    "mkapi>={{ cookiecutter._mkdocs_plugin_mkapi_version }}",
+    "pip>={{ cookiecutter._pip_version }}",
+]
 
 [tool.ruff]
-target-version = "{{'py312' if cookiecutter.python_version == '3.12'}}{{'py311' if cookiecutter.python_version == '3.11'}}{{'py310' if cookiecutter.python_version == '3.10'}}{{'py39' if cookiecutter.python_version == '3.9'}}{{'py38' if cookiecutter.python_version == '3.8'}}{{'py37' if cookiecutter.python_version == '3.7'}}"
+{% if cookiecutter.python_version == '3.13' -%}
+target-version = "py313"
+{% elif cookiecutter.python_version == '3.12' -%}
+target-version = "py312"
+{% elif cookiecutter.python_version == '3.11' -%}
+target-version = "py311"
+{% elif cookiecutter.python_version == '3.10' -%}
+target-version = "py310"
+{% elif cookiecutter.python_version == '3.9' -%}
+target-version = "py39"
+{% elif cookiecutter.python_version == '3.8' -%}
+target-version = "py38"
+{% elif cookiecutter.python_version == '3.7' -%}
+target-version = "py37"
+{% elif cookiecutter.python_version == '3.6' -%}
+target-version = "py36"
+{% endif -%}
 line-length = 88
 exclude = [
     ".git",
@@ -49,6 +70,9 @@ exclude = [
     ".pytest_cache",
     ".ruff_cache",
     ".venv",
+]
+extend-include = [
+    "*.ipynb",
 ]
 
 [tool.ruff.format]
@@ -67,7 +91,7 @@ extend-select = [
 "__init__.py" = [
     "F401",
 ]
-"src/scripts/your_script.py" = [
+"src/scripts/main.py" = [
     "I",
 ]
 
@@ -80,11 +104,8 @@ convention = "google"
 [tool.pytest.ini_options]
 minversion = "7.0"
 addopts = [
-    '--verbose',
     '--durations=10',
     '--color=yes',
-    '-s',
-    '-vv',
     '--doctest-modules',
     '--cov=src/{{cookiecutter.project_name}}',
 ]
@@ -95,9 +116,15 @@ filterwarnings = [
     "ignore::DeprecationWarning",
     "ignore::PendingDeprecationWarning",
     "ignore::ImportWarning",
+    "ignore::ResourceWarning",
+    "ignore::FutureWarning",
 ]
 log_cli_level = "info"
 testpaths = [
     "tests",
     "src/{{cookiecutter.project_name}}",
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
