@@ -34,8 +34,8 @@ install: ## Install dependencies
 	@$(MAKE) --quiet setup-environment-variables
 	@$(MAKE) --quiet setup-git
 	@$(MAKE) --quiet add-repo-to-git
+	@$(MAKE) --quiet install-pre-commit
 	@echo "Installed the '{{ cookiecutter.project_name }}' project! You can now activate your virtual environment with 'source .venv/bin/activate'."
-	@echo "If you want to use pre-commit hooks, run 'make install-pre-commit'."
 	@echo "Note that this is a 'uv' project. Use 'uv add <package>' to install new dependencies and 'uv remove <package>' to remove them."
 
 install-rust:
@@ -53,9 +53,14 @@ install-uv:
 		uv self update; \
 	fi
 
+install-pre-commit:
+	@uv run pre-commit install
+	@uv run pre-commit autoupdate
+
 install-dependencies:
 	@uv python install {{ cookiecutter.python_version }}
 	@uv sync --all-extras --python {{ cookiecutter.python_version }}
+	@uv sync -U --only-dev
 
 setup-environment-variables:
 	@uv run python src/scripts/fix_dot_env_file.py
@@ -78,9 +83,6 @@ add-repo-to-git:
 		git remote add origin git@github.com:alexandrainst/{{ cookiecutter.project_name }}.git; \
 	fi
 
-install-pre-commit:  ## Install pre-commit hooks
-	@uv run pre-commit install
-
 docs:  ## View documentation locally
 	@echo "Viewing documentation - run 'make publish-docs' to publish the documentation website."
 	@uv run mkdocs serve
@@ -100,7 +102,7 @@ tree:  ## Print directory tree
 	@tree -a --gitignore -I .git .
 
 lint:  ## Lint the project
-	uv run ruff check . --fix
+	uv run ruff check . --fix --unsafe-fixes
 
 format:  ## Format the project
 	uv run ruff format .
