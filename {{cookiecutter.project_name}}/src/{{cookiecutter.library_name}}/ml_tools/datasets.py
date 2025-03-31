@@ -100,7 +100,7 @@ class TimeSnippetDataset(Dataset):
 ###############################################################
 # Data extraction and preprocessing
 def retrieve_data_from_sql(
-    sql_table: str, variables: List[str], start_date: str, end_date: str
+    sql_table: str, variables: List[str], uuid: str, start_date: str, end_date: str
 ) -> Any:
     """Function that extracts raw data from postgres.
 
@@ -115,6 +115,9 @@ def retrieve_data_from_sql(
 
     variables: List[str]
         a list of variables to extract from the table
+
+    uuid: str
+        Filter data for a specific sensor uuid
 
     start_date: str
         The start of the data period, we are interested in,
@@ -136,7 +139,8 @@ def retrieve_data_from_sql(
             FROM
                 {sql_table}
             WHERE
-                time BETWEEN '{start_date}' AND '{end_date}'
+                uuid='{uuid}'
+                AND time BETWEEN '{start_date}' AND '{end_date}'
             ORDER BY 1;
         """
     statement = text(statement)

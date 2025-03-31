@@ -1,0 +1,26 @@
+name: "train"
+time_window_past: 6
+time_window_future: 0
+stride: 1
+snippet_path: "data/processed/"
+subsets:
+  - name: "data_from_unit1" 
+    table: "observations"
+    uuid: "unit1"
+    time_periods:
+      start: "1970-01-01 00:03:00+00"
+      end: " 1970-01-05 04:00:00+00"
+
+  - name: "observations"
+    table: "xTE_Mode1ToMode2_TransitionTime20"
+    uuid: "unit1"
+    time_periods:
+      start: "1970-01-01 00:03:00+00"
+      end: " 1970-01-05 04:00:00+00"
+
+  - name: "m1_to_m2_tt_30"
+    table: "xTE_Mode1ToMode2_TransitionTime30"
+    uuid: "unit1"
+    time_periods:
+      start: "1970-01-01 00:03:00+00"
+      end: " 1970-01-05 04:00:00+00"

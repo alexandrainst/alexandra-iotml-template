@@ -1,0 +1,14 @@
+name: "LinearAE"
+aimodel_params:
+  latent_dims: [33,22,11]
+  input_features:
+      0: "month_c"
+      1: "month_s"
+      2: "weekday_c"
+      3: "weekday_s"
+      4: "hour_c"
+      5: "hour_s"
+      6: "minute_c"
+      7: "minute_s"
+      8: "y"
+      9: "state"

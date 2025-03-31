@@ -30,9 +30,8 @@ Developer:
 
 1. Run `make install`, which sets up a virtual environment and all Python dependencies therein.
 2. Run `source .venv/bin/activate` to activate the virtual environment.
-<<<<<<< HEAD
-3. (Optional) Run `make add-rag` to add RAG functionality from [ragger](https://github.com/alexandrainst/ragger).
-4. Initialize a new instance of the toolbox by calling `docker-compose up -d --build`.
+3. Initialize a new instance of the toolbox by calling `docker-compose up -d --build`.
+4. (Optional) Run `make install-pre-commit`, which installs pre-commit hooks for linting, formatting and type checking.
 
 ### Dump data on postgres + Visualize with grafana
 
@@ -70,7 +69,6 @@ The steps for training a model is as follow:
 ### The `model` config
 =======
 3. (Optional) Run `make install-pre-commit`, which installs pre-commit hooks for linting, formatting and type checking.
->>>>>>> 38f2d0cda5a2cc53ab65ac62c2d91ddb0ae6d1b8
 
 
 ### Adding and Removing Packages
