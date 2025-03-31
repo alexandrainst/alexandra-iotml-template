@@ -31,5 +31,5 @@
     "_deploy_pages_action_version": "4",
     "_copy_without_render": [
         "src/nodered/*.json"
-    ],
+    ]
 }
