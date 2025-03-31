@@ -92,6 +92,14 @@ select = [
     "W",
     # flake-annotations (type hints)
     "ANN",
+    # Pyflakes
+    "F",
+]
+ignore = [
+    # Type annotations for "self" arguments
+    "ANN101",
+    # Type annotations for **kwargs
+    "ANN003",
 ]
 
 [tool.ruff.lint.extend-per-file-ignores]
