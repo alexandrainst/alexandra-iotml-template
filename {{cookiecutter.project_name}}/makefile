@@ -36,6 +36,7 @@ install: ## Install dependencies
 	@$(MAKE) --quiet add-repo-to-git
 	@echo "Installed the '{{ cookiecutter.project_name }}' project! You can now activate your virtual environment with 'source .venv/bin/activate'."
 	@echo "Note that this is a 'uv' project. Use 'uv add <package>' to install new dependencies and 'uv remove <package>' to remove them."
+	@echo "The next step is for you to launch the docker container network using \"docker compose up -d\". Remember to setup relevant credentials in .env beforehand."
 
 install-rust:
 	@if [ "$(shell which rustup)" = "" ]; then \
@@ -115,3 +116,10 @@ type-check:  ## Type-check the project
 		--check-untyped-defs
 
 check: lint format type-check  ## Lint, format, and type-check the code
+
+add-nodered-recipes:
+	@git clone git@github.com:alexandrainst/iot-nodered-recipes.git ./src/nodered/
+	rm -rf ./src/nodered/.git ## Remove the git, we only want the files
+	rm ./src/nodered/.gitignore
+	rm ./src/nodered/README.md
+	rm -r ./src/nodered/*/ ## Remove the rest of the recipe documentation
