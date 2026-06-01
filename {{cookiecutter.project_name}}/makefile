@@ -1,6 +1,6 @@
 # This ensures that we can call `make <target>` even if `<target>` exists as a file or
 # directory.
-.PHONY: docs help
+.PHONY: help
 
 # Exports all variables defined in the makefile available to scripts
 .EXPORT_ALL_VARIABLES:
@@ -28,7 +28,6 @@ help:
 
 install: ## Install dependencies
 	@echo "Installing the '{{ cookiecutter.project_name }}' project..."
-	@$(MAKE) --quiet install-rust
 	@$(MAKE) --quiet install-uv
 	@$(MAKE) --quiet install-dependencies
 	@$(MAKE) --quiet setup-environment-variables
@@ -38,19 +37,24 @@ install: ## Install dependencies
 	@echo "Note that this is a 'uv' project. Use 'uv add <package>' to install new dependencies and 'uv remove <package>' to remove them."
 	@echo "The next step is for you to launch the docker container network using \"docker compose up -d\". Remember to setup relevant credentials in .env beforehand."
 
-install-rust:
-	@if [ "$(shell which rustup)" = "" ]; then \
-		curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; \
-		echo "Installed Rust."; \
-	fi
+install-non-interactive:
+	@$(MAKE) --quiet install-uv
+	@$(MAKE) --quiet install-dependencies
+	@$(MAKE) --quiet setup-environment-variables-non-interactive
+	@$(MAKE) --quiet setup-git
+	@$(MAKE) --quiet add-repo-to-git
 
 install-uv:
 	@if [ "$(shell which uv)" = "" ]; then \
+		if [ "$(shell which rustup)" = "" ]; then \
+			curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; \
+			echo "Installed Rust."; \
+		fi; \
 		curl -LsSf https://astral.sh/uv/install.sh | sh; \
 		echo "Installed uv."; \
     else \
 		echo "Updating uv..."; \
-		uv self update; \
+		uv self update || true; \
 	fi
 
 install-pre-commit:
@@ -58,9 +62,11 @@ install-pre-commit:
 	@uv run pre-commit autoupdate
 
 install-dependencies:
+	{%- if cookiecutter.include_frontend == 'y' %}
+	@npm install
+	{%- endif %}
 	@uv python install {{ cookiecutter.python_version }}
-	@uv sync --all-extras --python {{ cookiecutter.python_version }}
-	@uv sync -U --only-dev
+	@uv sync --all-extras --all-groups --python {{ cookiecutter.python_version }}
 
 setup-environment-variables:
 	@uv run python src/scripts/fix_dot_env_file.py
@@ -83,39 +89,29 @@ add-repo-to-git:
 		git remote add origin git@github.com:alexandrainst/{{ cookiecutter.project_name }}.git; \
 	fi
 
-docs:  ## View documentation locally
-	@echo "Viewing documentation - run 'make publish-docs' to publish the documentation website."
-	@uv run mkdocs serve
-
-publish-docs:  ## Publish documentation to GitHub Pages
-	@uv run mkdocs gh-deploy
-	@echo "Updated documentation website: https://alexandrainst.github.io/{{ cookiecutter.project_name }}"
-
 test:  ## Run tests
-	@uv run pytest && uv run readme-cov
+	@uv run pytest && \
+		uv run readme-cov && \
+		git add README.md && \
+		git commit -m "docs: Update coverage badge"
 
 docker:  ## Build Docker image and run container
+	@make install
+	{% if cookiecutter.include_frontend == 'y' -%}
+	@docker compose up --build --remove-orphans
+	{%- else -%}
 	@docker build -t {{ cookiecutter.project_name }} .
 	@docker run -it --rm {{ cookiecutter.project_name }}
+	{%- endif %}
 
 tree:  ## Print directory tree
 	@tree -a --gitignore -I .git .
 
-lint:  ## Lint the project
-	uv run ruff check . --fix --unsafe-fixes
-
-format:  ## Format the project
-	uv run ruff format .
-
-type-check:  ## Type-check the project
-	@uv run mypy . \
-		--install-types \
-		--non-interactive \
-		--ignore-missing-imports \
-		--show-error-codes \
-		--check-untyped-defs
-
-check: lint format type-check  ## Lint, format, and type-check the code
+check:  ## Lint, format, and type-check the code
+	{%- if cookiecutter.include_frontend == 'y' %}
+	@npm run check
+	{%- endif %}
+	@git add . && uv run pre-commit run --all-files; status=$$?; git reset >/dev/null; exit $$status
 
 add-nodered-recipes:
 	@git clone git@github.com:alexandrainst/iot-nodered-recipes.git ./src/nodered/

@@ -10,43 +10,64 @@ on:
     branches:
       - main
 
+concurrency:
+  group: {% raw %}${{ github.workflow }}-${{ github.head_ref }}{% endraw %}
+  cancel-in-progress: true
+
 jobs:
   code-check:
     if: github.event.pull_request.draft == false
+    permissions:
+      contents: read
+      pull-requests: write
     {% if cookiecutter.open_source == 'y' -%}
     runs-on: ubuntu-latest
-    {% else -%}
-  runs-on: [self-hosted, self-hosted-ubuntu-latest]
-    {% endif -%}
+    {%- else -%}
+    runs-on: [self-hosted, self-hosted-ubuntu-latest]
+    {%- endif %}
     steps:
-      - uses: actions/checkout@v{{ cookiecutter._checkout_action_version }}
-      - uses: actions/setup-python@v{{ cookiecutter._setup_python_action_version }}
+      - uses: actions/checkout@{{ cookiecutter._checkout_action_sha }}  # {{ cookiecutter._checkout_action_version }}
         with:
+          persist-credentials: false
+          ref: main
+
+      - name: Install uv and set up Python
+        uses: astral-sh/setup-uv@{{ cookiecutter._setup_uv_action_sha }}  # {{ cookiecutter._setup_uv_action_version }}
+        with:
+          enable-cache: true
           python-version: "{{ cookiecutter.python_version }}"
-      - uses: pre-commit/action@v{{ cookiecutter._pre_commit_action_version }}
+
+      - run: uvx pre-commit run --show-diff-on-failure --color=always --all-files
+        shell: bash
 
   pytest:
     if: github.event.pull_request.draft == false
+    permissions:
+      contents: read
+      pull-requests: write
     strategy:
         matrix:
             {% if cookiecutter.open_source == 'y' -%}
             os: [windows-latest, macos-latest, ubuntu-latest]
-            {% else -%}
+            {%- else -%}
             os: [self-hosted-ubuntu-latest]
-            {% endif -%}
+            {%- endif %}
             python-version: ["{{ cookiecutter.python_version }}"]
     runs-on: {% raw %}${{ matrix.os }}{% endraw %}
     steps:
-      - uses: actions/checkout@v{{ cookiecutter._checkout_action_version }}
+      - uses: actions/checkout@{{ cookiecutter._checkout_action_sha }}  # {{ cookiecutter._checkout_action_version }}
+        with:
+          persist-credentials: false
+          ref: main
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v{{ cookiecutter._setup_uv_action_version }}
+      - name: Install uv and set up Python
+        uses: astral-sh/setup-uv@{{ cookiecutter._setup_uv_action_sha }}  # {{ cookiecutter._setup_uv_action_version }}
         with:
           enable-cache: true
           python-version: {% raw %}${{ matrix.python-version }}{% endraw %}
 
       - name: Install Dependencies
-        run: uv sync --all-extras
+        run: uv sync --locked --all-extras --dev
 
       - name: Test with pytest
-        run: uv run --no-cache pytest
+        run: uv run pytest

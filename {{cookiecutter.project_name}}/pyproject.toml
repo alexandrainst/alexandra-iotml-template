@@ -4,14 +4,16 @@ version = "0.0.0"
 description = "{{cookiecutter.project_description}}"
 readme = "README.md"
 authors = [
-    {name = "{{cookiecutter.author_name}}", email = "{{cookiecutter.email}}"},
+  {name = "{{cookiecutter.author_name}}", email = "{{cookiecutter.email}}"},
 ]
 maintainers = [
-    {name = "{{cookiecutter.author_name}}", email = "{{cookiecutter.email}}"},
+  {name = "{{cookiecutter.author_name}}", email = "{{cookiecutter.email}}"},
 ]
 requires-python = ">={{ cookiecutter.python_version }},<4.0"
 dependencies = [
-    "hydra-core>={{ cookiecutter._hydra_version }}",
+  {%- if cookiecutter.include_frontend == 'y' -%}
+  "fastapi[standard]>={{ cookiecutter._fastapi_version }}",
+  {%- endif -%}
 ]
 
 [project.urls]
@@ -27,52 +29,31 @@ file = "LICENSE"
 
 {% endif -%}
 
-[tool.uv]
-dev-dependencies = [
-    "pytest>={{ cookiecutter._pytest_version }}",
-    "pytest-cov>={{ cookiecutter._pytest_cov_version }}",
-    "pre-commit>={{ cookiecutter._pre_commit_version }}",
-    "readme-coverage-badger>={{ cookiecutter._readme_coverage_badger_version }}",
-    "click>={{ cookiecutter._click_version }}",
-    "ruff>={{ cookiecutter._ruff_version }}",
-    "mypy>={{ cookiecutter._mypy_version }}",
-    "nbstripout>={{ cookiecutter._nbstripout_version }}",
-    "coverage>={{ cookiecutter._coverage_version }}",
-    "mkdocs-material>={{ cookiecutter._mkdocs_material_version }}",
-    "mkdocs-include-markdown-plugin>={{ cookiecutter._mkdocs_plugin_include_markdown_version }}",
-    "mkdocs-include-dir-to-nav>={{ cookiecutter._mkdocs_plugin_include_dir_to_nav_version }}",
-    "mkapi>={{ cookiecutter._mkdocs_plugin_mkapi_version }}",
-    "pip>={{ cookiecutter._pip_version }}",
+[dependency-groups]
+dev = [
+  "pytest>={{ cookiecutter._pytest_version }}",
+  "pytest-cov>={{ cookiecutter._pytest_cov_version }}",
+  "pre-commit>={{ cookiecutter._pre_commit_version }}",
+  "readme-coverage-badger>={{ cookiecutter._readme_coverage_badger_version }}",
+  "click>={{ cookiecutter._click_version }}",
+  "ruff>={{ cookiecutter._ruff_version }}",
+  "ty>={{ cookiecutter._ty_version }}",
+  "nbstripout>={{ cookiecutter._nbstripout_version }}",
+  "coverage>={{ cookiecutter._coverage_version }}",
+  "pip>={{ cookiecutter._pip_version }}",
 ]
 
 [tool.ruff]
-{% if cookiecutter.python_version == '3.13' -%}
-target-version = "py313"
-{% elif cookiecutter.python_version == '3.12' -%}
-target-version = "py312"
-{% elif cookiecutter.python_version == '3.11' -%}
-target-version = "py311"
-{% elif cookiecutter.python_version == '3.10' -%}
-target-version = "py310"
-{% elif cookiecutter.python_version == '3.9' -%}
-target-version = "py39"
-{% elif cookiecutter.python_version == '3.8' -%}
-target-version = "py38"
-{% elif cookiecutter.python_version == '3.7' -%}
-target-version = "py37"
-{% elif cookiecutter.python_version == '3.6' -%}
-target-version = "py36"
-{% endif -%}
+target-version = "py{{ cookiecutter.python_version.replace('.', '') }}"
 line-length = 88
 exclude = [
-    ".git",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    ".venv",
+  ".git",
+  ".pytest_cache",
+  ".ruff_cache",
+  ".venv",
 ]
 extend-include = [
-    "*.ipynb",
+  "*.ipynb",
 ]
 
 [tool.ruff.format]
@@ -82,32 +63,40 @@ docstring-code-format = true
 skip-magic-trailing-comma = true
 
 [tool.ruff.lint]
+preview = true
 select = [
-    # isort (imports)
-    "I",
-    # pydocstyle (docstrings)
-    "D",
-    # pycodestyle errors and warnings (PEP8)
-    "E",
-    "W",
-    # flake-annotations (type hints)
-    "ANN",
-    # Pyflakes
-    "F",
+  # Imports
+  "I",
+  "PLC0415",
+  # Docstrings
+  "D",
+  "DOC",
+  # pycodestyle errors and warnings (PEP8)
+  "E",
+  "W",
+  # flake-annotations (type hints)
+  "ANN",
+  # Pyflakes
+  "F",
 ]
 ignore = [
-    # Type annotations for "self" arguments
-    "ANN101",
-    # Type annotations for **kwargs
-    "ANN003",
+  # Type annotations for "self" arguments
+  "ANN101",
+  # Type annotations for "cls" arguments
+  "ANN102",
+  # Type annotations for *args
+  "ANN002",
+  # Type annotations for **kwargs
+  "ANN003",
+  # Always add blank line before class docstring
+  "D203",
+  # No new-line as first line of docstring
+  "D213",
 ]
 
 [tool.ruff.lint.extend-per-file-ignores]
 "__init__.py" = [
-    "F401",
-]
-"src/scripts/main.py" = [
-    "I",
+  "F401",
 ]
 
 [tool.ruff.lint.isort]
@@ -117,27 +106,27 @@ split-on-trailing-comma = false
 convention = "google"
 
 [tool.pytest.ini_options]
-minversion = "7.0"
+minversion = "{{ cookiecutter._pytest_version }}"
 addopts = [
-    '--durations=10',
-    '--color=yes',
-    '--doctest-modules',
-    '--cov=src/{{cookiecutter.project_name}}',
+  '--durations=10',
+  '--color=yes',
+  '--doctest-modules',
+  '--cov=src/{{cookiecutter.project_name}}',
 ]
 xfail_strict = true
 filterwarnings = [
-    "error",
-    "ignore::UserWarning",
-    "ignore::DeprecationWarning",
-    "ignore::PendingDeprecationWarning",
-    "ignore::ImportWarning",
-    "ignore::ResourceWarning",
-    "ignore::FutureWarning",
+  "error",
+  "ignore::UserWarning",
+  "ignore::DeprecationWarning",
+  "ignore::PendingDeprecationWarning",
+  "ignore::ImportWarning",
+  "ignore::ResourceWarning",
+  "ignore::FutureWarning",
 ]
 log_cli_level = "info"
 testpaths = [
-    "tests",
-    "src/{{cookiecutter.project_name}}",
+  "tests",
+  "src/{{cookiecutter.project_name}}",
 ]
 
 [build-system]
