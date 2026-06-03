@@ -21,7 +21,7 @@ DESIRED_ENVIRONMENT_VARIABLES = dict(
 # List all predefined environment variables
 PREDEFINED_ENVIRONMENT_VARIABLES = dict(
     GF_INSTALL_PLUGINS="volkovlabs-echarts-panel",
-    POSTGRES_DB="{{cookiecutter.library_name}}_data",
+    POSTGRES_DB="{{cookiecutter.project_name}}_data",
     POSTGRES_USER="admin",
 )
 
