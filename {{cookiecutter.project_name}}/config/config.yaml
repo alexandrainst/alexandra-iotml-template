@@ -1,6 +1,12 @@
+# Top-level hydra config. The `defaults` list composes one aimodel + one
+# ml_training + one dataset into a single config that iotml_core.ml_tools.config
+# .IoTMLConfig validates. Override any group on the command line, e.g.:
+#   uv run python src/scripts/train_model.py ml_training=output_prediction aimodel=lstm
 defaults:
-  - override hydra/job_logging: custom
   - _self_
+  - aimodel: linear_ae
+  - ml_training: anomaly_encoding
+  - dataset: train
 
 dirs:
   data: data
@@ -9,84 +15,6 @@ dirs:
   final: final
   models: models
 
-ml_experiment:
-  - aimodel: linear_ae
-  - ml_training: anomaly_encoding
-  - dataset: train
-
-# # Define several types of ml model trainings
-# ml_trainings:
-#   - training:
-#       aimodel:
-#         name: "LinearAE"
-#         aimodel_params:
-#           latent_dims: [33,22,11]
-#       training_params:
-#         training_type: "anomaly_encoder"
-#         name: "anomaly_encoder_all_variables"
-#         input_features:
-#             0: "month_c"
-#             1: "month_s"
-#             2: "weekday_c"
-#             3: "weekday_s"
-#             4: "hour_c"
-#             5: "hour_s"
-#             6: "minute_c"
-#             7: "minute_s"
-#             8: "y"
-#             9: "state"
-#         learning_rate: 0.00001
-#         batch_size: 10
-#         n_epochs: 10
-#         loss: "RecoLoss"
-
-#   - training:
-#       aimodel:
-#         name: "LSTMCell"
-#         aimodel_params:
-#           n_hidden: 285
-
-#       training_params:
-#         training_type: "output_predictor"
-#         name: "lstm_prediction_input_to_outputs_recoloss"
-#         input_features:
-#             0: "month_c"
-#             1: "month_s"
-#             2: "weekday_c"
-#             3: "weekday_s"
-#             4: "hour_c"
-#             5: "hour_s"
-#             6: "minute_c"
-#             7: "minute_s"
-#             8: "y"
-#             9: "state"
-#         output_features:
-#             0: "y"
-#             1: "state"
-#         learning_rate: 0.001
-#         batch_size: 30
-#         n_epochs: 11
-#         loss: "RecoLoss"
-
-# define data set periods
-datasets:
-  - dataset:
-      name: "example_data"
-      train:
-        sql_table: "example_data"
-        variables:
-          - "time"
-          - "y"
-          - "state"
-        time_periods:
-          start: "2023-05-28 00:00:00+00"
-          end: "2023-07-23 09:37:00+00"
-      test:
-        sql_table: "example_data"
-        variables:
-          - "time"
-          - "y"
-          - "state"
-        time_periods:
-          start: "2023-07-23 09:38:00+00"
-          end: "2023-08-30 23:59:00+00"
+hydra:
+  run:
+    dir: outputs/${hydra.job.name}/${now:%Y-%m-%d_%H-%M-%S}

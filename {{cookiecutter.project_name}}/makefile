@@ -30,6 +30,7 @@ install: ## Install dependencies
 	@echo "Installing the '{{ cookiecutter.project_name }}' project..."
 	@$(MAKE) --quiet install-uv
 	@$(MAKE) --quiet install-dependencies
+	@$(MAKE) --quiet install-iotml-core
 	@$(MAKE) --quiet setup-environment-variables
 	@$(MAKE) --quiet setup-git
 	@$(MAKE) --quiet add-repo-to-git
@@ -40,6 +41,7 @@ install: ## Install dependencies
 install-non-interactive:
 	@$(MAKE) --quiet install-uv
 	@$(MAKE) --quiet install-dependencies
+	@$(MAKE) --quiet install-iotml-core
 	@$(MAKE) --quiet setup-environment-variables-non-interactive
 	@$(MAKE) --quiet setup-git
 	@$(MAKE) --quiet add-repo-to-git
@@ -119,3 +121,8 @@ add-nodered-recipes:
 	rm ./src/nodered/.gitignore
 	rm ./src/nodered/README.md
 	rm -r ./src/nodered/*/ ## Remove the rest of the recipe documentation
+
+install-iotml-core:  ## Install iotml-core (private) and the ML runtime deps it needs
+	@echo "Installing iotml-core from its private repo (requires SSH access to github.com/alexandrainst/iotml-core)..."
+	@uv add "iotml-core @ git+ssh://git@github.com/alexandrainst/iotml-core.git@main"
+	@uv add hydra-core

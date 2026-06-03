@@ -1,0 +1,14 @@
+# Multivariate LSTM output predictor. Pair with `ml_training=output_prediction`
+# and a dataset whose `time_window_future` is > 0.
+name: "lstm_predictor"
+architecture:
+  _target_: iotml_core.ml_tools.models.LSTMCell
+  time_window_past: 6
+  time_window_future: 3
+  n_hidden: 64
+  input_features:
+    0: "y"
+    1: "state"
+  output_features:
+    0: "y"
+    1: "state"

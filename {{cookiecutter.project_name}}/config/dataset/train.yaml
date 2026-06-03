@@ -1,26 +1,17 @@
-name: "train"
+# Dataset definition consumed by iotml_core.utils.data_tools.generate_dataset.
+# Each subset is pulled from a SQL table via iotml_core.utils.sql.SQLSession,
+# which expects the iotml column convention: a `timestamp` column and a numeric
+# `time_since_start` column, plus the feature columns referenced by the model
+# (here `y`, `state`). The dump script (src/scripts/dump_csv_to_psql.py)
+# produces those time columns for you.
+name: "example_train"
 time_window_past: 6
 time_window_future: 0
 stride: 1
 snippet_path: "data/processed/"
 subsets:
-  - name: "data_from_unit1" 
-    table: "observations"
-    uuid: "unit1"
+  - name: "example_subset"
+    table: "example_data"
     time_periods:
-      start: "1970-01-01 00:03:00+00"
-      end: " 1970-01-05 04:00:00+00"
-
-  - name: "observations"
-    table: "xTE_Mode1ToMode2_TransitionTime20"
-    uuid: "unit1"
-    time_periods:
-      start: "1970-01-01 00:03:00+00"
-      end: " 1970-01-05 04:00:00+00"
-
-  - name: "m1_to_m2_tt_30"
-    table: "xTE_Mode1ToMode2_TransitionTime30"
-    uuid: "unit1"
-    time_periods:
-      start: "1970-01-01 00:03:00+00"
-      end: " 1970-01-05 04:00:00+00"
+      start: "2023-05-28 00:00:00+00"
+      end: "2023-08-30 23:59:00+00"

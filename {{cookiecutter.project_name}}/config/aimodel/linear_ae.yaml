@@ -1,14 +1,12 @@
-name: "LinearAE"
-aimodel_params:
-  latent_dims: [33,22,11]
+# Linear autoencoder. `architecture` is instantiated directly by hydra
+# (see src/scripts/train_model.py). `time_window_past` must match the dataset,
+# and every `latent_dims` entry must be smaller than
+# n_features * time_window_past (here 2 * 6 = 12).
+name: "linear_ae_vanilla"
+architecture:
+  _target_: iotml_core.ml_tools.models.LinearAE
+  time_window_past: 6
+  latent_dims: [10, 6, 3]
   input_features:
-      0: "month_c"
-      1: "month_s"
-      2: "weekday_c"
-      3: "weekday_s"
-      4: "hour_c"
-      5: "hour_s"
-      6: "minute_c"
-      7: "minute_s"
-      8: "y"
-      9: "state"
+    0: "y"
+    1: "state"

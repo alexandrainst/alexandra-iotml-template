@@ -34,6 +34,16 @@ Developer:
 2. Run `source .venv/bin/activate` to activate the virtual environment.
 3. Initialize a new instance of the toolbox by calling `docker-compose up -d --build`.
 
+> **Note — the `iotml-core` dependency.**
+> The ML library code (models, losses, datasets, training loop, config schema, SQL
+> layer) lives in the **private** package
+> [`iotml-core`](https://github.com/alexandrainst/iotml-core). `make install` pulls it in
+> via the `make install-iotml-core` target, which runs
+> `uv add "iotml-core @ git+ssh://git@github.com/alexandrainst/iotml-core.git@main"` (plus
+> `hydra-core`). You therefore need **SSH access** to the `alexandrainst/iotml-core`
+> repository for installation to succeed. Import it in your own code as `iotml_core`,
+> e.g. `from iotml_core.ml_tools.models import LinearAE`.
+
 ### Dump data on postgres + Visualize with grafana
 
 ## About the ML framework
@@ -94,6 +104,9 @@ uv pip list
 The project includes the following convenience commands:
 
 - `make install`: Install the project and its dependencies in a virtual environment.
+- `make install-iotml-core`: Install the private `iotml-core` package (via git+ssh) and
+  the ML runtime deps it needs. Run automatically by `make install`; requires SSH access
+  to `alexandrainst/iotml-core`.
 - `make install-pre-commit`: Install pre-commit hooks for linting, formatting and type
   checking.
 - `make check`: Lint and format the code using `ruff`, and type check using `pyrefly`.

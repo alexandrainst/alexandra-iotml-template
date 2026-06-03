@@ -1,11 +1,13 @@
-name: "faulty_observations"
+# A second dataset, e.g. a held-out / faulty period to evaluate against.
+# Same column conventions as dataset/train.yaml.
+name: "example_faulty"
 time_window_past: 6
 time_window_future: 0
 stride: 1
 snippet_path: "data/processed/"
 subsets:
-- name: "run1"
-  table: "faulty_observations"
-  time_periods:
-    start: "1970-01-01 00:03:00+00"
-    end: " 1970-01-05 04:00:00+00"
+  - name: "faulty_subset"
+    table: "example_data"
+    time_periods:
+      start: "2023-08-31 00:00:00+00"
+      end: "2023-09-30 23:59:00+00"

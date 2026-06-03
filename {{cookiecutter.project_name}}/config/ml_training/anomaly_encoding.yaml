@@ -1,5 +1,10 @@
-learning_rate: 0.00001
+# Anomaly-encoder training. `optimizer` and `loss` are instantiated by hydra.
+training_type: "anomaly_encoder"
+name: "anomaly_encoder_example"
+optimizer:
+  _target_: torch.optim.Adam
+  lr: 0.00001
 batch_size: 10
 n_epochs: 10
-loss: 
-  _target_: "{{cookiecutter.library_name}}/ml_tools/losses.RecoLoss"
+loss:
+  _target_: iotml_core.ml_tools.losses.RecoLoss
